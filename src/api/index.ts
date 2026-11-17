@@ -16,6 +16,8 @@ import {
     IPortalEnrollment,
     IPortalInvoice,
     IPortalPayment,
+    IPermission,
+    IRole,
     IUser,
 } from '@/types/backend';
 import { getUserId } from '@/utils/storage';
@@ -109,6 +111,16 @@ export const callFetchMyInvoices = () =>
 export const callFetchInvoiceById = (id: string) => findById<IInvoice>('invoices', id);
 export const callFetchMyPayments = () =>
     axios.get<any, IBackendRes<IPortalPayment[]>>('/payments/me');
+
+// --- BACKOFFICE APIs ---
+// These resources mirror the modules available under `/admin` in the web portal.
+export const callFetchUsers = (query = '') => list<IUser>('users', query);
+export const callFetchRoles = (query = '') => list<IRole>('roles', query);
+export const callFetchPermissions = (query = '') => list<IPermission>('permissions', query);
+export const callFetchEnrollments = (query = '') => list<IEnrollment>('enrollments', query);
+export const callFetchInvoices = (query = '') => list<IInvoice>('invoices', query);
+export const callFetchPayments = (query = '') => list<IPayment>('payments', query);
+export const callFetchLeads = (query = '') => list<ILead>('leads', query);
 
 // --- LEADS APIS (CONSULTANT) ---
 export const callCreateLead = (value: {

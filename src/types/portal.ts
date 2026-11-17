@@ -30,6 +30,7 @@ export const getPortalRole = (roleName?: string): PortalRole => {
 };
 
 export const getDefaultRouteForRole = (roleName?: string): string => {
+    if (isBackofficeRole(roleName)) return '/admin';
     const role = getPortalRole(roleName);
     switch (role) {
         case 'TEACHER':
