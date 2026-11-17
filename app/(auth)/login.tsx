@@ -66,9 +66,9 @@ export default function LoginScreen() {
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1 }}
+                    contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
                     keyboardShouldPersistTaps="handled"
-                    className="px-6 py-10 justify-center"
+                    className="px-6 py-10"
                 >
                     {/* Header Logo */}
                     <View className="items-center mb-8">
