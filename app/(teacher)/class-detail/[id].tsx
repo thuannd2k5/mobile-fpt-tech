@@ -25,14 +25,16 @@ export default function TeacherClassDetailScreen() {
         try {
             const [classRes, studentsRes] = await Promise.allSettled([
                 callFetchClassroomById(id),
-                callFetchMyStudents(id),
+                callFetchMyStudents(),
             ]);
 
             if (classRes.status === 'fulfilled' && classRes.value?.data) {
                 setClassroom(classRes.value.data);
             }
-            if (studentsRes.status === 'fulfilled' && studentsRes.value?.data?.result) {
-                setStudents(studentsRes.value.data.result);
+            if (studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value?.data)) {
+                setStudents(
+                    studentsRes.value.data.filter((item) => item.class_id?._id === id)
+                );
             }
         } catch {
             // handle error

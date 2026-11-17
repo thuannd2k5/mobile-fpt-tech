@@ -36,7 +36,7 @@ export const FptButton: React.FC<FptButtonProps> = ({
         }
         switch (variant) {
             case 'primary':
-                return 'bg-fpt-orange border-fpt-orange active:bg-fpt-orangeDark';
+                return 'bg-fpt-orange border-fpt-orange active:bg-fpt-orangeDark shadow-sm';
             case 'secondary':
                 return 'bg-fpt-blue border-fpt-blue active:bg-fpt-blueDark';
             case 'outline':
@@ -71,7 +71,7 @@ export const FptButton: React.FC<FptButtonProps> = ({
             case 'sm':
                 return 'px-3 py-1.5 rounded-lg';
             case 'lg':
-                return 'px-6 py-4 rounded-2xl';
+                return 'min-h-[56px] px-6 py-4 rounded-2xl';
             case 'md':
             default:
                 return 'px-4 py-3 rounded-xl';
@@ -94,6 +94,7 @@ export const FptButton: React.FC<FptButtonProps> = ({
         <TouchableOpacity
             activeOpacity={0.8}
             disabled={disabled || loading}
+            accessibilityRole="button"
             className={`flex-row items-center justify-center border ${getVariantStyle()} ${getSizeStyle()} ${className}`}
             {...props}
         >

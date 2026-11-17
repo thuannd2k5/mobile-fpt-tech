@@ -65,19 +65,11 @@ export const callRefreshToken = () =>
 export const callLogout = () =>
     axios.post<any, IBackendRes<string>>('/auth/logout');
 
-export const callUpdateMyProfile = async (value: {
+export const callUpdateMyProfile = (value: {
     name?: string;
-    phone?: string;
-    address?: string;
-    age?: number;
-    gender?: string;
     currentPassword?: string;
     newPassword?: string;
-}) => {
-    const id = await getUserId();
-    if (!id) throw new Error('Không xác định được tài khoản người dùng.');
-    return update<IUser>('users', id, value);
-};
+}) => axios.patch<any, IBackendRes<IUser>>('/users/me', value);
 
 // --- COURSES APIS ---
 export const callFetchCourse = (query = '') => list<ICourse>('courses', query);
@@ -108,12 +100,8 @@ export const callCancelMyEnrollment = (id: string) =>
     axios.patch<any, IBackendRes<{ matchedCount: number; modifiedCount: number }>>(
         `/enrollments/me/${id}/cancel`
     );
-export const callFetchMyStudents = (classId?: string) => {
-    const query = classId
-        ? `class_id=${classId}&populate=student_id,class_id&pageSize=1000`
-        : `populate=student_id,class_id&pageSize=1000`;
-    return list<IPortalEnrollment>('enrollments', query);
-};
+export const callFetchMyStudents = () =>
+    axios.get<any, IBackendRes<IPortalEnrollment[]>>('/enrollments/teacher/students');
 
 // --- INVOICES & PAYMENTS APIS ---
 export const callFetchMyInvoices = () =>
@@ -133,7 +121,8 @@ export const callCreateLead = (value: {
 export const callFetchLeadsForConsultants = () =>
     axios.get<any, IBackendRes<ILead[]>>('/leads/consultant-inbox');
 export const callUpdateLead = (id: string, value: Partial<ILead>) =>
-    update<ILead>('leads', id, value);
+    // Backend identifies the lead from `_id` in the body, not the URL parameter.
+    update<ILead>('leads', id, { ...value, _id: id });
 
 // --- CONVERSATIONS & MESSAGES APIS ---
 export const callFetchMyConversations = () =>

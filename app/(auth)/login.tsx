@@ -62,7 +62,7 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-white"
+            className="flex-1 bg-slate-50"
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
@@ -70,22 +70,24 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                     className="px-6 py-10"
                 >
-                    {/* Header Logo */}
-                    <View className="items-center mb-8">
-                        <View className="h-20 w-20 items-center justify-center rounded-3xl bg-orange-500 shadow-md mb-4">
+                    <View className="items-center mb-7">
+                        <View className="h-20 w-20 items-center justify-center rounded-[28px] bg-orange-500 shadow-md mb-5 border-4 border-orange-100">
                             <Ionicons name="school" size={44} color="#FFFFFF" />
                         </View>
-                        <Text className="text-2xl font-black text-gray-900">
+                        <Text className="text-[11px] font-extrabold tracking-[2px] text-fpt-orange">
+                            FPT EDUCATION PORTAL
+                        </Text>
+                        <Text className="mt-1 text-3xl font-black text-slate-900">
                             FPT TECH EDUCATION
                         </Text>
-                        <Text className="text-sm text-gray-500 mt-1">
-                            Đăng nhập hệ sinh thái đào tạo
+                        <Text className="text-sm text-slate-500 mt-2">
+                            Không gian học tập dành riêng cho bạn
                         </Text>
                     </View>
 
-                    {/* Error Banner */}
+                    <View className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
                     {errorMessage ? (
-                        <View className="mb-4 flex-row items-center rounded-xl bg-red-50 p-3.5 border border-red-200">
+                        <View className="mb-4 flex-row items-center rounded-2xl bg-red-50 p-3.5 border border-red-100">
                             <Ionicons name="alert-circle" size={20} color="#EF4444" />
                             <Text className="ml-2.5 flex-1 text-xs font-medium text-red-700">
                                 {errorMessage}
@@ -127,9 +129,10 @@ export default function LoginScreen() {
                             size="lg"
                         />
                     </View>
+                    </View>
 
                     {/* Register Link */}
-                    <View className="mt-8 flex-row items-center justify-center">
+                    <View className="mt-7 flex-row items-center justify-center">
                         <Text className="text-sm text-gray-500">Chưa có tài khoản? </Text>
                         <TouchableWithoutFeedback onPress={() => router.push('/(auth)/register')}>
                             <Text className="text-sm font-bold text-fpt-orange">Đăng ký ngay</Text>

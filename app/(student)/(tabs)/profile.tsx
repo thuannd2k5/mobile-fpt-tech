@@ -27,18 +27,10 @@ export default function StudentProfileScreen() {
     // Edit profile state
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [name, setName] = useState(user.name || '');
-    const [phone, setPhone] = useState(user.phone || '');
-    const [address, setAddress] = useState(user.address || '');
-    const [age, setAge] = useState(user.age ? String(user.age) : '20');
-    const [gender, setGender] = useState(user.gender || 'MALE');
     const [saving, setSaving] = useState(false);
 
     const handleOpenEdit = () => {
         setName(user.name || '');
-        setPhone(user.phone || '');
-        setAddress(user.address || '');
-        setAge(user.age ? String(user.age) : '20');
-        setGender(user.gender || 'MALE');
         setEditModalVisible(true);
     };
 
@@ -52,19 +44,11 @@ export default function StudentProfileScreen() {
         try {
             await callUpdateMyProfile({
                 name: name.trim(),
-                phone: phone.trim(),
-                address: address.trim(),
-                age: parseInt(age, 10) || 20,
-                gender,
             });
 
             dispatch(
                 setProfileAction({
                     name: name.trim(),
-                    phone: phone.trim(),
-                    address: address.trim(),
-                    age: parseInt(age, 10) || 20,
-                    gender,
                 })
             );
 
@@ -134,43 +118,35 @@ export default function StudentProfileScreen() {
                     >
                         <Ionicons name="pencil-outline" size={14} color="#4A5568" />
                         <Text className="ml-1.5 text-xs font-semibold text-gray-700">
-                            Chỉnh sửa thông tin
+                            Chỉnh sửa tên hiển thị
                         </Text>
                     </TouchableOpacity>
                 </FptCard>
 
-                {/* Personal Information Details */}
-                <View className="mb-4 rounded-2xl bg-white border border-gray-100 p-4 shadow-sm">
-                    <Text className="text-sm font-bold text-gray-900 mb-3">Thông tin chi tiết</Text>
+                {/* Account information returned by the authenticated backend endpoint */}
+                <View className="mb-4 rounded-3xl bg-white border border-gray-100 p-5 shadow-sm">
+                    <View className="mb-4 flex-row items-center justify-between">
+                        <Text className="text-sm font-bold text-gray-900">Thông tin tài khoản</Text>
+                        <View className="rounded-full bg-emerald-50 px-2.5 py-1">
+                            <Text className="text-[10px] font-bold text-emerald-700">ĐANG HOẠT ĐỘNG</Text>
+                        </View>
+                    </View>
 
                     <View className="space-y-3">
                         <View className="flex-row items-center justify-between">
-                            <Text className="text-xs text-gray-500">Số điện thoại</Text>
-                            <Text className="text-xs font-semibold text-gray-800">
-                                {user.phone || 'Chưa cập nhật'}
+                            <Text className="text-xs text-gray-500">Email đăng nhập</Text>
+                            <Text className="ml-6 flex-1 text-right text-xs font-semibold text-gray-800" numberOfLines={1}>
+                                {user.email || 'Chưa cập nhật'}
                             </Text>
                         </View>
 
                         <View className="flex-row items-center justify-between pt-2 border-t border-gray-50">
-                            <Text className="text-xs text-gray-500">Địa chỉ</Text>
+                            <Text className="text-xs text-gray-500">Vai trò</Text>
                             <Text className="text-xs font-semibold text-gray-800">
-                                {user.address || 'Chưa cập nhật'}
+                                {user.role?.name || 'Học viên'}
                             </Text>
                         </View>
 
-                        <View className="flex-row items-center justify-between pt-2 border-t border-gray-50">
-                            <Text className="text-xs text-gray-500">Độ tuổi</Text>
-                            <Text className="text-xs font-semibold text-gray-800">
-                                {user.age ? `${user.age} tuổi` : 'Chưa cập nhật'}
-                            </Text>
-                        </View>
-
-                        <View className="flex-row items-center justify-between pt-2 border-t border-gray-50">
-                            <Text className="text-xs text-gray-500">Giới tính</Text>
-                            <Text className="text-xs font-semibold text-gray-800">
-                                {user.gender === 'FEMALE' ? 'Nữ' : 'Nam'}
-                            </Text>
-                        </View>
                     </View>
                 </View>
 
@@ -247,7 +223,7 @@ export default function StudentProfileScreen() {
                         <View className="max-h-[90%] rounded-t-3xl bg-white p-6">
                             <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
                                 <Text className="text-lg font-bold text-gray-900">
-                                    Cập nhật thông tin cá nhân
+                                    Cập nhật tên hiển thị
                                 </Text>
                                 <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                                     <Ionicons name="close" size={22} color="#718096" />
@@ -260,54 +236,10 @@ export default function StudentProfileScreen() {
                                     value={name}
                                     onChangeText={setName}
                                 />
-                                <FptInput
-                                    label="Số điện thoại"
-                                    value={phone}
-                                    onChangeText={setPhone}
-                                    keyboardType="phone-pad"
-                                />
-                                <FptInput
-                                    label="Địa chỉ"
-                                    value={address}
-                                    onChangeText={setAddress}
-                                />
-                                <FptInput
-                                    label="Tuổi"
-                                    value={age}
-                                    onChangeText={setAge}
-                                    keyboardType="numeric"
-                                />
-
-                                <Text className="mb-1.5 text-sm font-medium text-gray-700">Giới tính</Text>
-                                <View className="mb-4 flex-row rounded-xl border border-gray-200 bg-white p-1">
-                                    <TouchableOpacity
-                                        onPress={() => setGender('MALE')}
-                                        className={`flex-1 py-2.5 rounded-lg items-center ${
-                                            gender === 'MALE' ? 'bg-orange-500' : 'bg-transparent'
-                                        }`}
-                                    >
-                                        <Text
-                                            className={`text-xs font-semibold ${
-                                                gender === 'MALE' ? 'text-white' : 'text-gray-600'
-                                            }`}
-                                        >
-                                            Nam
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() => setGender('FEMALE')}
-                                        className={`flex-1 py-2.5 rounded-lg items-center ${
-                                            gender === 'FEMALE' ? 'bg-orange-500' : 'bg-transparent'
-                                        }`}
-                                    >
-                                        <Text
-                                            className={`text-xs font-semibold ${
-                                                gender === 'FEMALE' ? 'text-white' : 'text-gray-600'
-                                            }`}
-                                        >
-                                            Nữ
-                                        </Text>
-                                    </TouchableOpacity>
+                                <View className="mb-5 rounded-2xl bg-orange-50 p-3">
+                                    <Text className="text-xs leading-5 text-orange-800">
+                                        Tên hiển thị sẽ được đồng bộ trực tiếp với tài khoản của bạn.
+                                    </Text>
                                 </View>
 
                                 <View className="mt-4 mb-6">

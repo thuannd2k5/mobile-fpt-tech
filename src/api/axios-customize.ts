@@ -20,6 +20,8 @@ const NO_RETRY_HEADER = 'x-no-retry';
 const instance = axios.create({
     baseURL: BACKEND_URL,
     timeout: 15000,
+    // Required for the web build to persist the backend's HttpOnly refresh cookie.
+    withCredentials: true,
 });
 
 instance.interceptors.request.use(
@@ -80,6 +82,7 @@ instance.interceptors.response.use(
                     const refreshRes = await axios.get<IBackendRes<AccessTokenResponse>>(
                         `${BACKEND_URL}/auth/refresh`,
                         {
+                            withCredentials: true,
                             headers: {
                                 Cookie: `refresh_token=${currentRefreshToken}`,
                             },

@@ -16,14 +16,14 @@ export const FptCard: React.FC<FptCardProps> = ({
 }) => {
     const cardContent = (
         <View
-            className={`rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ${className}`}
+            className={`rounded-3xl border border-slate-100 bg-white p-4 shadow-sm ${className}`}
             style={[
                 {
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 6,
-                    elevation: 2,
+                    shadowOpacity: 0.06,
+                    shadowRadius: 12,
+                    elevation: 3,
                 },
                 style,
             ]}

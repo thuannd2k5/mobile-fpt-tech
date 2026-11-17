@@ -40,20 +40,22 @@ export default function SplashScreen() {
     }, [dispatch, router]);
 
     return (
-        <View className="flex-1 items-center justify-center bg-white px-6">
-            <View className="mb-4 h-24 w-24 items-center justify-center rounded-3xl bg-orange-500 shadow-md">
+        <View className="flex-1 items-center justify-center bg-slate-950 px-6">
+            <View className="absolute top-0 h-2 w-full bg-orange-500" />
+            <View className="mb-5 h-24 w-24 items-center justify-center rounded-[32px] bg-orange-500 shadow-md border-4 border-orange-300">
                 <Ionicons name="school" size={54} color="#FFFFFF" />
             </View>
-            <Text className="text-2xl font-black text-gray-900 tracking-tight">
+            <Text className="text-xs font-bold tracking-[3px] text-orange-300">FPT EDUCATION</Text>
+            <Text className="mt-2 text-3xl font-black text-white tracking-tight">
                 FPT EDUCATION
             </Text>
-            <Text className="mt-1 text-sm text-gray-500 font-medium">
+            <Text className="mt-2 text-sm text-slate-300 font-medium">
                 Hệ sinh thái đào tạo công nghệ
             </Text>
 
             <View className="absolute bottom-16 items-center">
                 <ActivityIndicator size="small" color="#F26522" />
-                <Text className="mt-3 text-xs text-gray-400">Đang khởi động hệ thống...</Text>
+                <Text className="mt-3 text-xs text-slate-400">Đang khởi động hệ thống...</Text>
             </View>
         </View>
     );

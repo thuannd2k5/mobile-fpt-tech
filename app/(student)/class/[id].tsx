@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { callFetchClassroomById, callFetchMyStudents } from '@/api';
-import { IClassroom, IPortalEnrollment } from '@/types/backend';
+import { callFetchClassroomById } from '@/api';
+import { IClassroom } from '@/types/backend';
 import { FptHeader, FptLoading, FptBadge, FptCard } from '@/components/common';
 
 export default function ClassDetailScreen() {
@@ -16,21 +16,14 @@ export default function ClassDetailScreen() {
 
     const [loading, setLoading] = useState(true);
     const [classroom, setClassroom] = useState<IClassroom | null>(null);
-    const [students, setStudents] = useState<IPortalEnrollment[]>([]);
 
     const loadData = useCallback(async () => {
         if (!id) return;
         try {
-            const [classRes, studentsRes] = await Promise.allSettled([
-                callFetchClassroomById(id),
-                callFetchMyStudents(id),
-            ]);
+            const classRes = await callFetchClassroomById(id);
 
-            if (classRes.status === 'fulfilled' && classRes.value?.data) {
-                setClassroom(classRes.value.data);
-            }
-            if (studentsRes.status === 'fulfilled' && studentsRes.value?.data?.result) {
-                setStudents(studentsRes.value.data.result);
+            if (classRes?.data) {
+                setClassroom(classRes.data);
             }
         } catch {
             // handle error
@@ -108,49 +101,22 @@ export default function ClassDetailScreen() {
                     </View>
                 </FptCard>
 
-                {/* Classmates Section */}
+                {/* Privacy-safe class information */}
                 <View className="mt-2">
                     <View className="flex-row items-center justify-between mb-3">
                         <Text className="text-base font-bold text-gray-900">
-                            Danh sách học viên trong lớp
-                        </Text>
-                        <Text className="text-xs text-gray-500 font-semibold">
-                            {students.length} thành viên
+                            Thông tin lớp học
                         </Text>
                     </View>
-
-                    {students.length === 0 ? (
-                        <View className="rounded-2xl bg-white p-6 border border-gray-100 items-center justify-center">
-                            <Ionicons name="people-outline" size={32} color="#A0AEC0" />
-                            <Text className="mt-2 text-xs text-gray-500">
-                                Chưa có danh sách học viên hoặc đang được bảo mật.
-                            </Text>
-                        </View>
-                    ) : (
-                        students.map((item, index) => (
-                            <View
-                                key={item._id || index}
-                                className="mb-2 flex-row items-center justify-between rounded-xl bg-white p-3.5 border border-gray-100 shadow-sm"
-                            >
-                                <View className="flex-row items-center">
-                                    <View className="h-9 w-9 items-center justify-center rounded-full bg-orange-100 mr-3">
-                                        <Text className="text-xs font-bold text-fpt-orange">
-                                            {(item.student_id?.name || 'HV')[0].toUpperCase()}
-                                        </Text>
-                                    </View>
-                                    <View>
-                                        <Text className="text-sm font-bold text-gray-900">
-                                            {item.student_id?.name || 'Học viên'}
-                                        </Text>
-                                        <Text className="text-xs text-gray-500">
-                                            {item.student_id?.email || 'N/A'}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <FptBadge status={item.status || 'STUDYING'} size="sm" />
-                            </View>
-                        ))
-                    )}
+                    <View className="rounded-2xl bg-white p-5 border border-gray-100 items-center justify-center">
+                        <Ionicons name="shield-checkmark-outline" size={30} color="#F26522" />
+                        <Text className="mt-2 text-sm font-semibold text-gray-800">
+                            Danh sách học viên được bảo mật
+                        </Text>
+                        <Text className="mt-1 text-center text-xs leading-5 text-gray-500">
+                            Bạn vẫn có thể xem lịch học, phòng học và các thông tin cần thiết của lớp.
+                        </Text>
+                    </View>
                 </View>
             </ScrollView>
         </View>

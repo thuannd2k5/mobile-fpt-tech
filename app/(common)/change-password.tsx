@@ -32,8 +32,8 @@ export default function ChangePasswordScreen() {
             return;
         }
 
-        if (newPassword.length < 6) {
-            setErrorMessage('Mật khẩu mới phải có ít nhất 6 ký tự.');
+        if (newPassword.length < 8) {
+            setErrorMessage('Mật khẩu mới phải có ít nhất 8 ký tự.');
             return;
         }
 
@@ -116,7 +116,7 @@ export default function ChangePasswordScreen() {
 
                     <FptInput
                         label="Mật khẩu mới *"
-                        placeholder="Tối thiểu 6 ký tự..."
+                        placeholder="Tối thiểu 8 ký tự..."
                         value={newPassword}
                         onChangeText={setNewPassword}
                         isPassword
