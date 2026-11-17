@@ -4,8 +4,6 @@ import {
     Text,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
     ScrollView,
     Alert,
     TouchableOpacity,
@@ -89,12 +87,11 @@ export default function RegisterScreen() {
             className="flex-1 bg-white"
         >
             <FptHeader title="Tạo tài khoản học viên" showBack />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <ScrollView
-                    contentContainerStyle={{ flexGrow: 1 }}
-                    keyboardShouldPersistTaps="handled"
-                    className="px-6 py-6"
-                >
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1 }}
+                keyboardShouldPersistTaps="always"
+                className="px-6 py-6"
+            >
                     <Text className="text-xl font-bold text-gray-900 mb-1">
                         Chào mừng bạn!
                     </Text>
@@ -199,8 +196,7 @@ export default function RegisterScreen() {
                             size="lg"
                         />
                     </View>
-                </ScrollView>
-            </TouchableWithoutFeedback>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }

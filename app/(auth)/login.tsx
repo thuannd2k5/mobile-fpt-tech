@@ -4,10 +4,9 @@ import {
     Text,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
     ScrollView,
     Alert,
+    TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,12 +63,11 @@ export default function LoginScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1 bg-slate-50"
         >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-                    keyboardShouldPersistTaps="handled"
-                    className="px-6 py-10"
-                >
+            <ScrollView
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+                keyboardShouldPersistTaps="always"
+                className="px-6 py-10"
+            >
                     <View className="items-center mb-7">
                         <View className="h-20 w-20 items-center justify-center rounded-[28px] bg-orange-500 shadow-md mb-5 border-4 border-orange-100">
                             <Ionicons name="school" size={44} color="#FFFFFF" />
@@ -134,12 +132,14 @@ export default function LoginScreen() {
                     {/* Register Link */}
                     <View className="mt-7 flex-row items-center justify-center">
                         <Text className="text-sm text-gray-500">Chưa có tài khoản? </Text>
-                        <TouchableWithoutFeedback onPress={() => router.push('/(auth)/register')}>
+                        <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => router.push('/(auth)/register')}
+                        >
                             <Text className="text-sm font-bold text-fpt-orange">Đăng ký ngay</Text>
-                        </TouchableWithoutFeedback>
+                        </TouchableOpacity>
                     </View>
-                </ScrollView>
-            </TouchableWithoutFeedback>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }

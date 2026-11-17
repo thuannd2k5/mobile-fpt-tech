@@ -6,8 +6,6 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -84,11 +82,10 @@ export default function ChangePasswordScreen() {
             className="flex-1 bg-white"
         >
             <FptHeader title="Đổi mật khẩu" showBack />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <ScrollView
-                    className="flex-1 px-6 py-6"
-                    keyboardShouldPersistTaps="handled"
-                >
+            <ScrollView
+                className="flex-1 px-6 py-6"
+                keyboardShouldPersistTaps="always"
+            >
                     <Text className="text-xl font-bold text-gray-900 mb-1">
                         Bảo mật tài khoản
                     </Text>
@@ -140,8 +137,7 @@ export default function ChangePasswordScreen() {
                             size="lg"
                         />
                     </View>
-                </ScrollView>
-            </TouchableWithoutFeedback>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }

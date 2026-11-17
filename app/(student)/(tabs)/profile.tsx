@@ -8,8 +8,6 @@ import {
     Modal,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -219,8 +217,7 @@ export default function StudentProfileScreen() {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     className="flex-1 justify-end bg-black/50"
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <View className="max-h-[90%] rounded-t-3xl bg-white p-6">
+                    <View className="max-h-[90%] rounded-t-3xl bg-white p-6">
                             <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
                                 <Text className="text-lg font-bold text-gray-900">
                                     Cập nhật tên hiển thị
@@ -251,8 +248,7 @@ export default function StudentProfileScreen() {
                                     />
                                 </View>
                             </ScrollView>
-                        </View>
-                    </TouchableWithoutFeedback>
+                    </View>
                 </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>

@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* React Native Web keeps the browser focus outline on TextInput by default.
+   The input component already renders an accessible orange focus border. */
+input,
+textarea {
+  outline: none;
+}
