@@ -13,14 +13,18 @@ import { callFetchClassroomById, callFetchMyStudents } from '@/api';
 import { IClassroom, IPortalEnrollment } from '@/types/backend';
 import { FptHeader, FptLoading, FptBadge, FptCard } from '@/components/common';
 
+import FptErrorBanner from '@/components/common/FptErrorBanner';
+
 export default function TeacherClassDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [classroom, setClassroom] = useState<IClassroom | null>(null);
     const [students, setStudents] = useState<IPortalEnrollment[]>([]);
 
     const loadData = useCallback(async () => {
+        setLoadError('');
         if (!id) return;
         try {
             const [classRes, studentsRes] = await Promise.allSettled([
@@ -28,6 +32,9 @@ export default function TeacherClassDetailScreen() {
                 callFetchMyStudents(),
             ]);
 
+            if ([classRes, studentsRes].some((result) => result.status === 'rejected')) {
+                setLoadError('Không thể tải đầy đủ thông tin. Vui lòng thử lại.');
+            }
             if (classRes.status === 'fulfilled' && classRes.value?.data) {
                 setClassroom(classRes.value.data);
             }
@@ -37,7 +44,7 @@ export default function TeacherClassDetailScreen() {
                 );
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải đầy đủ thông tin. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
         }
@@ -66,7 +73,8 @@ export default function TeacherClassDetailScreen() {
     if (loading) {
         return (
             <View className="flex-1 bg-white">
-                <FptHeader title="Chi tiết lớp giảng dạy" showBack />
+                <FptHeader safeArea title="Chi tiết lớp giảng dạy" showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
                 <FptLoading message="Đang tải dữ liệu lớp học..." />
             </View>
         );
@@ -75,7 +83,8 @@ export default function TeacherClassDetailScreen() {
     if (!classroom) {
         return (
             <View className="flex-1 bg-white">
-                <FptHeader title="Chi tiết lớp giảng dạy" showBack />
+                <FptHeader safeArea title="Chi tiết lớp giảng dạy" showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
                 <View className="flex-1 items-center justify-center p-6">
                     <Text className="text-gray-500">Không tìm thấy thông tin lớp học.</Text>
                 </View>
@@ -84,8 +93,9 @@ export default function TeacherClassDetailScreen() {
     }
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <FptHeader title={classroom.class_name || 'Chi tiết lớp học'} showBack />
+        <View className="flex-1 bg-fpt-grayBg">
+            <FptHeader safeArea title={classroom.class_name || 'Chi tiết lớp học'} showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
 
             <ScrollView className="flex-1 p-5" contentContainerStyle={{ paddingBottom: 32 }}>
                 {/* Classroom Overview */}

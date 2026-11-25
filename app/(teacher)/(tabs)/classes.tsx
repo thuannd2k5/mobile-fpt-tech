@@ -10,31 +10,38 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAppSelector } from '@/redux/hooks';
 import { callFetchMyTeachingClassrooms } from '@/api';
 import { IClassroomWithDetails } from '@/types/backend';
 import { FptCard, FptBadge, FptLoading, FptEmptyState } from '@/components/common';
 
+import FptErrorBanner from '@/components/common/FptErrorBanner';
+
 export default function TeacherClassesScreen() {
     const router = useRouter();
+    const teacherId = useAppSelector((state) => state.account.user._id);
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [classes, setClasses] = useState<IClassroomWithDetails[]>([]);
     const [search, setSearch] = useState('');
 
     const fetchClasses = useCallback(async () => {
+        setLoadError('');
         try {
-            const res = await callFetchMyTeachingClassrooms();
+            if (!teacherId) throw new Error('Thiếu thông tin giảng viên');
+            const res = await callFetchMyTeachingClassrooms(teacherId);
             if (res && res.data && Array.isArray(res.data.result)) {
                 setClasses(res.data.result);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [teacherId]);
 
     useEffect(() => {
         fetchClasses();
@@ -55,9 +62,10 @@ export default function TeacherClassesScreen() {
     });
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-            <View className="bg-white px-5 pt-3 pb-3 border-b border-gray-100">
-                <Text className="text-2xl font-black text-gray-900">Danh sách Lớp học</Text>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
+            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
+            <View className="bg-white px-5 pt-5 pb-4 border-b border-slate-100">
+                <Text className="text-2xl font-bold text-gray-900">Danh sách Lớp học</Text>
                 <Text className="text-xs text-gray-500 mt-0.5">
                     Quản lý các lớp phụ trách giảng dạy
                 </Text>
@@ -94,7 +102,7 @@ export default function TeacherClassesScreen() {
                             tintColor="#0050B3"
                         />
                     }
-                    ListEmptyComponent={
+                    ListEmptyComponent={loadError ? undefined :
                         <FptEmptyState
                             title="Không tìm thấy lớp học"
                             description={

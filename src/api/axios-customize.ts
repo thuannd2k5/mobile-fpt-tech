@@ -9,6 +9,7 @@ import {
     clearAuthStorage,
 } from '@/utils/storage';
 import { IBackendRes } from '@/types/backend';
+import { notifySessionExpired } from '@/utils/session';
 
 interface AccessTokenResponse {
     access_token: string;
@@ -16,6 +17,13 @@ interface AccessTokenResponse {
 
 const mutex = new Mutex();
 const NO_RETRY_HEADER = 'x-no-retry';
+const expireSession = async () => {
+    try {
+        await clearAuthStorage();
+    } finally {
+        notifySessionExpired();
+    }
+};
 
 const instance = axios.create({
     baseURL: BACKEND_URL,
@@ -61,20 +69,33 @@ instance.interceptors.response.use(
     async (error: AxiosError<any>) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { [NO_RETRY_HEADER]?: boolean };
 
+        if (error.response?.status === 401 && originalRequest?.[NO_RETRY_HEADER]) {
+            await expireSession();
+            return Promise.reject(error.response.data);
+        }
+
         if (
             error.response &&
             error.response.status === 401 &&
             originalRequest &&
             !originalRequest.url?.includes('/auth/login') &&
+            !originalRequest.url?.includes('/auth/register') &&
+            !originalRequest.url?.includes('/auth/refresh') &&
             !originalRequest[NO_RETRY_HEADER]
         ) {
             originalRequest[NO_RETRY_HEADER] = true;
 
             return await mutex.runExclusive(async () => {
                 try {
+                    // Another failed request may already have refreshed this token.
+                    const latestToken = await getAccessToken();
+                    if (latestToken && originalRequest.headers.Authorization !== `Bearer ${latestToken}`) {
+                        originalRequest.headers.Authorization = `Bearer ${latestToken}`;
+                        return instance.request(originalRequest);
+                    }
                     const currentRefreshToken = await getRefreshToken();
                     if (!currentRefreshToken) {
-                        await clearAuthStorage();
+                        await expireSession();
                         return Promise.reject(error?.response?.data ?? error);
                     }
 
@@ -82,6 +103,7 @@ instance.interceptors.response.use(
                     const refreshRes = await axios.get<IBackendRes<AccessTokenResponse>>(
                         `${BACKEND_URL}/auth/refresh`,
                         {
+                            timeout: 15000,
                             withCredentials: true,
                             headers: {
                                 Cookie: `refresh_token=${currentRefreshToken}`,
@@ -108,8 +130,10 @@ instance.interceptors.response.use(
                         }
                         return instance.request(originalRequest);
                     }
+                    await expireSession();
+                    return Promise.reject(refreshRes.data);
                 } catch (refreshErr) {
-                    await clearAuthStorage();
+                    await expireSession();
                     return Promise.reject(refreshErr);
                 }
             });

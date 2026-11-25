@@ -14,22 +14,26 @@ import { callFetchCourse } from '@/api';
 import { ICourse } from '@/types/backend';
 import { FptCard, FptLoading, FptEmptyState } from '@/components/common';
 
+import FptErrorBanner from '@/components/common/FptErrorBanner';
+
 export default function StudentCoursesScreen() {
     const router = useRouter();
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [courses, setCourses] = useState<ICourse[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
 
     const fetchCourses = useCallback(async () => {
+        setLoadError('');
         try {
             const res = await callFetchCourse('pageSize=50');
             if (res && res.data && Array.isArray(res.data.result)) {
                 setCourses(res.data.result);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -56,10 +60,11 @@ export default function StudentCoursesScreen() {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
+            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
             {/* Header & Search */}
             <View className="bg-white px-5 pt-3 pb-4 border-b border-gray-100">
-                <Text className="text-2xl font-black text-gray-900">Khám phá Khóa học</Text>
+                <Text className="text-2xl font-bold text-gray-900">Khám phá Khóa học</Text>
                 <Text className="text-xs text-gray-500 mt-0.5">
                     Chương trình đào tạo công nghệ chuẩn quốc tế FPT
                 </Text>
@@ -97,7 +102,7 @@ export default function StudentCoursesScreen() {
                             tintColor="#F26522"
                         />
                     }
-                    ListEmptyComponent={
+                    ListEmptyComponent={loadError ? undefined :
                         <FptEmptyState
                             title="Không tìm thấy khóa học"
                             description={

@@ -17,7 +17,10 @@ import { callFetchLeadsForConsultants, callUpdateLead } from '@/api';
 import { ILead } from '@/types/backend';
 import { FptCard, FptBadge, FptLoading, FptEmptyState, FptButton, FptInput } from '@/components/common';
 
+import FptErrorBanner from '@/components/common/FptErrorBanner';
+
 export default function ConsultantLeadsScreen() {
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [leads, setLeads] = useState<ILead[]>([]);
@@ -31,13 +34,14 @@ export default function ConsultantLeadsScreen() {
     const [updating, setUpdating] = useState(false);
 
     const fetchLeads = useCallback(async () => {
+        setLoadError('');
         try {
             const res = await callFetchLeadsForConsultants();
             if (res && res.data && Array.isArray(res.data)) {
                 setLeads(res.data);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -105,10 +109,11 @@ export default function ConsultantLeadsScreen() {
     });
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
+            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
             {/* Header */}
-            <View className="bg-white px-5 pt-3 pb-3 border-b border-gray-100">
-                <Text className="text-2xl font-black text-gray-900">Khách hàng quan tâm</Text>
+            <View className="bg-white px-5 pt-5 pb-4 border-b border-slate-100">
+                <Text className="text-2xl font-bold text-gray-900">Khách hàng quan tâm</Text>
                 <Text className="text-xs text-gray-500 mt-0.5">
                     Hộp thư tiếp nhận khách hàng tiềm năng (Leads CRM)
                 </Text>
@@ -223,9 +228,9 @@ export default function ConsultantLeadsScreen() {
                                 </View>
 
                                 {item.note && (
-                                    <View className="mt-2 rounded-xl bg-gray-50 p-2.5">
+                                    <View className="mt-2 rounded-xl bg-fpt-grayBg p-2.5">
                                         <Text className="text-xs text-gray-600 italic">
-                                            "{item.note}"
+                                            &quot;{item.note}&quot;
                                         </Text>
                                     </View>
                                 )}

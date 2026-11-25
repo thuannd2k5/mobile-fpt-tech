@@ -10,34 +10,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import FptErrorBanner from '@/components/common/FptErrorBanner';
 import 'dayjs/locale/vi';
+import { useAppSelector } from '@/redux/hooks';
 import { callFetchMyTeachingClassrooms } from '@/api';
 import { IClassroomWithDetails } from '@/types/backend';
 import { FptCard, FptBadge, FptLoading, FptEmptyState } from '@/components/common';
 
+dayjs.extend(isoWeek);
 dayjs.locale('vi');
+
 
 export default function TeacherScheduleScreen() {
     const router = useRouter();
+    const teacherId = useAppSelector((state) => state.account.user._id);
 
     const [selectedDate, setSelectedDate] = useState(dayjs());
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [classrooms, setClassrooms] = useState<IClassroomWithDetails[]>([]);
 
     const fetchTeachingClasses = useCallback(async () => {
+        setLoadError('');
         try {
-            const res = await callFetchMyTeachingClassrooms();
+            if (!teacherId) throw new Error('Thiếu thông tin giảng viên');
+            const res = await callFetchMyTeachingClassrooms(teacherId);
             if (res && res.data && Array.isArray(res.data.result)) {
                 setClassrooms(res.data.result);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [teacherId]);
 
     useEffect(() => {
         fetchTeachingClasses();
@@ -49,17 +58,18 @@ export default function TeacherScheduleScreen() {
     };
 
     const weekDays = useMemo(() => {
-        const startOfWeek = selectedDate.startOf('week').add(1, 'day'); // Monday
+        const startOfWeek = selectedDate.startOf('isoWeek'); // Monday
         return Array.from({ length: 7 }, (_, i) => startOfWeek.add(i, 'day'));
     }, [selectedDate]);
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
+            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
             {/* Header */}
-            <View className="bg-white px-5 pt-3 pb-3 border-b border-gray-100">
+            <View className="bg-white px-5 pt-5 pb-4 border-b border-slate-100">
                 <View className="flex-row items-center justify-between">
                     <View>
-                        <Text className="text-2xl font-black text-gray-900">Lịch giảng dạy</Text>
+                        <Text className="text-2xl font-bold text-gray-900">Lịch giảng dạy</Text>
                         <Text className="text-xs text-gray-500 mt-0.5">
                             Cổng thông tin Giảng viên FPT Education
                         </Text>
@@ -76,7 +86,7 @@ export default function TeacherScheduleScreen() {
                 <View className="mt-3 flex-row items-center justify-between">
                     <TouchableOpacity
                         onPress={() => setSelectedDate((d) => d.subtract(1, 'week'))}
-                        className="p-1 rounded-lg bg-gray-100"
+                        accessibilityRole="button" className="min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-slate-100"
                     >
                         <Ionicons name="chevron-back" size={18} color="#4A5568" />
                     </TouchableOpacity>
@@ -155,9 +165,10 @@ export default function TeacherScheduleScreen() {
                         />
                     }
                 >
-                    <View className="flex-row items-center justify-between mb-3">
+                    <View className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4"><Text className="text-xs leading-5 text-blue-800">Danh sách dưới đây là khung giờ của lớp. Ngày học từng buổi chưa được cung cấp; vui lòng xác nhận với phòng đào tạo.</Text></View>
+                    <View className="flex-row flex-wrap items-center justify-between mb-3">
                         <Text className="text-base font-bold text-gray-900">
-                            Ca dạy {selectedDate.format('dddd, DD/MM/YYYY')}
+                            Khung giờ các lớp phụ trách
                         </Text>
                         <Text className="text-xs text-gray-500">
                             {classrooms.length} lớp phụ trách
@@ -167,7 +178,7 @@ export default function TeacherScheduleScreen() {
                     {classrooms.length === 0 ? (
                         <FptEmptyState
                             title="Không có ca dạy"
-                            description="Hôm nay bạn không có lịch lên lớp. Chúc bạn một ngày làm việc hiệu quả!"
+                            description="Bạn chưa có lớp phụ trách để hiển thị khung giờ."
                             icon="calendar-outline"
                         />
                     ) : (
@@ -186,7 +197,7 @@ export default function TeacherScheduleScreen() {
                                             <Ionicons name="time" size={16} color="#0050B3" />
                                         </View>
                                         <Text className="text-sm font-bold text-gray-900">
-                                            {cls.start_time || '08:00'} - {cls.end_time || '10:00'}
+                                            {cls.start_time || 'Chưa xếp giờ'} - {cls.end_time || 'Chưa xếp giờ'}
                                         </Text>
                                     </View>
                                     <FptBadge status={cls.status || 'OPEN'} size="sm" />

@@ -3,7 +3,6 @@ import {
     View,
     Text,
     ScrollView,
-    FlatList,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,13 +10,17 @@ import { callFetchClassroomById } from '@/api';
 import { IClassroom } from '@/types/backend';
 import { FptHeader, FptLoading, FptBadge, FptCard } from '@/components/common';
 
+import FptErrorBanner from '@/components/common/FptErrorBanner';
+
 export default function ClassDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [classroom, setClassroom] = useState<IClassroom | null>(null);
 
     const loadData = useCallback(async () => {
+        setLoadError('');
         if (!id) return;
         try {
             const classRes = await callFetchClassroomById(id);
@@ -26,7 +29,7 @@ export default function ClassDetailScreen() {
                 setClassroom(classRes.data);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải đầy đủ thông tin. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
         }
@@ -39,7 +42,8 @@ export default function ClassDetailScreen() {
     if (loading) {
         return (
             <View className="flex-1 bg-white">
-                <FptHeader title="Chi tiết lớp học" showBack />
+                <FptHeader safeArea title="Chi tiết lớp học" showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
                 <FptLoading message="Đang tải thông tin lớp học..." />
             </View>
         );
@@ -48,7 +52,8 @@ export default function ClassDetailScreen() {
     if (!classroom) {
         return (
             <View className="flex-1 bg-white">
-                <FptHeader title="Chi tiết lớp học" showBack />
+                <FptHeader safeArea title="Chi tiết lớp học" showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
                 <View className="flex-1 items-center justify-center p-6">
                     <Text className="text-gray-500">Không tìm thấy thông tin lớp học.</Text>
                 </View>
@@ -57,8 +62,9 @@ export default function ClassDetailScreen() {
     }
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <FptHeader title={classroom.class_name || 'Chi tiết lớp học'} showBack />
+        <View className="flex-1 bg-fpt-grayBg">
+            <FptHeader safeArea title={classroom.class_name || 'Chi tiết lớp học'} showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
 
             <ScrollView className="flex-1 p-5" contentContainerStyle={{ paddingBottom: 32 }}>
                 {/* Classroom Overview Card */}

@@ -86,9 +86,9 @@ export default function ChatRoomScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            className="flex-1 bg-gray-50"
+            className="flex-1 bg-fpt-grayBg"
         >
-            <FptHeader title="Phòng trao đổi" showBack />
+            <FptHeader safeArea title="Phòng trao đổi" showBack />
 
             {loading ? (
                 <FptLoading message="Đang tải tin nhắn..." />

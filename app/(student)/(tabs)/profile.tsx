@@ -86,19 +86,19 @@ export default function StudentProfileScreen() {
     const initial = (user.name || 'U')[0].toUpperCase();
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
             {/* Header */}
-            <View className="bg-white px-5 pt-3 pb-3 border-b border-gray-100">
-                <Text className="text-2xl font-black text-gray-900">Tài khoản cá nhân</Text>
+            <View className="bg-white px-5 pt-5 pb-4 border-b border-slate-100">
+                <Text className="text-2xl font-bold text-gray-900">Tài khoản cá nhân</Text>
             </View>
 
             <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 32 }}>
                 {/* Profile Card */}
                 <FptCard className="mb-4 items-center p-6">
-                    <View className="h-20 w-20 items-center justify-center rounded-full bg-orange-100 mb-3 border-2 border-orange-200">
-                        <Text className="text-3xl font-black text-fpt-orange">{initial}</Text>
+                    <View className="h-20 w-20 items-center justify-center rounded-3xl bg-orange-50 mb-3 border-2 border-orange-200">
+                        <Text className="text-3xl font-bold text-fpt-orange">{initial}</Text>
                     </View>
-                    <Text className="text-xl font-bold text-gray-900">{user.name || 'Học viên'}</Text>
+                    <Text className="text-xl font-bold text-gray-900">{user.name || 'Tài khoản FPT'}</Text>
                     <Text className="text-xs text-gray-500 mt-0.5">{user.email || 'N/A'}</Text>
 
                     <View className="mt-2.5">
@@ -122,7 +122,7 @@ export default function StudentProfileScreen() {
                 </FptCard>
 
                 {/* Account information returned by the authenticated backend endpoint */}
-                <View className="mb-4 rounded-3xl bg-white border border-gray-100 p-5 shadow-sm">
+                <View className="mb-4 rounded-2xl bg-white border border-slate-200/70 p-5 shadow-sm">
                     <View className="mb-4 flex-row items-center justify-between">
                         <Text className="text-sm font-bold text-gray-900">Thông tin tài khoản</Text>
                         <View className="rounded-full bg-emerald-50 px-2.5 py-1">

@@ -46,3 +46,31 @@
   npx expo start -c
   ```
 * Mở ứng dụng **Camera** trên iPhone hoặc ứng dụng **Expo Go** trên App Store, quét mã QR hiển thị trên màn hình terminal để bắt đầu trải nghiệm ứng dụng!
+
+## Cấu hình tài khoản nhận học phí
+
+Ứng dụng không có sẵn tài khoản ngân hàng nhận học phí. Khi chưa được cấu hình đầy đủ, màn hình hóa đơn hướng dẫn học viên liên hệ phòng đào tạo.
+
+Chỉ thêm các biến sau vào `.env` sau khi xác nhận thông tin nhận tiền với đơn vị đào tạo:
+
+```env
+EXPO_PUBLIC_PAYMENT_BANK_ID=<ma_BIN_ngan_hang>
+EXPO_PUBLIC_PAYMENT_BANK_NAME=<ten_ngan_hang>
+EXPO_PUBLIC_PAYMENT_ACCOUNT_NUMBER=<so_tai_khoan>
+EXPO_PUBLIC_PAYMENT_ACCOUNT_NAME=<ten_chu_tai_khoan>
+```
+
+Đây là thông tin công khai được đưa vào ứng dụng; không đặt thông tin đăng nhập ngân hàng tại đây. Khởi động lại Expo sau khi đổi cấu hình. QR chỉ hỗ trợ điền thông tin chuyển khoản; trạng thái hóa đơn lấy từ backend, không tự đổi khi đóng hướng dẫn.
+
+## Giới hạn lịch học
+
+Backend hiện trả khung giờ lớp (`start_time`, `end_time`), chưa có thứ học hoặc ngày của từng buổi. Màn hình lịch hiển thị danh sách khung giờ lớp; lịch tuần là phần tham khảo ngày, không xác nhận lớp học diễn ra vào ngày được chọn.
+
+## Kiểm tra mobile
+
+```bash
+npm test
+npm run typecheck
+npm run lint
+npx expo export --platform all
+```

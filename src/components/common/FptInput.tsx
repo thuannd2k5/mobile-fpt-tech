@@ -23,6 +23,9 @@ export const FptInput: React.FC<FptInputProps> = ({
     isPassword = false,
     containerClassName = '',
     secureTextEntry,
+    onFocus,
+    onBlur,
+    accessibilityLabel,
     ...props
 }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +39,7 @@ export const FptInput: React.FC<FptInputProps> = ({
                 </Text>
             )}
             <View
-                className={`flex-row items-center rounded-xl border bg-white px-3.5 py-3 ${
+                className={`flex-row items-center min-h-[52px] rounded-2xl border bg-slate-50 px-4 py-3 ${
                     error
                         ? 'border-red-500 bg-red-50/20'
                         : isFocused
@@ -49,15 +52,18 @@ export const FptInput: React.FC<FptInputProps> = ({
                     className="flex-1 text-base text-gray-900"
                     placeholderTextColor="#A0AEC0"
                     secureTextEntry={isPassword ? !showPassword : secureTextEntry}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
+                    accessibilityLabel={accessibilityLabel || label || props.placeholder}
+                    onFocus={(event) => { setIsFocused(true); onFocus?.(event); }}
+                    onBlur={(event) => { setIsFocused(false); onBlur?.(event); }}
                     {...props}
                 />
                 {isPassword && (
                     <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={() => setShowPassword(!showPassword)}
-                        className="p-1"
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                        className="min-h-[44px] min-w-[44px] items-center justify-center"
                     >
                         <Ionicons
                             name={showPassword ? 'eye-off-outline' : 'eye-outline'}

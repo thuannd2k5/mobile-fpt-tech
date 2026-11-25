@@ -5,10 +5,10 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Alert,
     TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch } from '@/redux/hooks';
 import { setUserLoginInfo } from '@/redux/slice/accountSlice';
@@ -59,87 +59,58 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-slate-50"
-        >
-            <ScrollView
-                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-                keyboardShouldPersistTaps="always"
-                className="px-6 py-10"
-            >
-                    <View className="items-center mb-7">
-                        <View className="h-20 w-20 items-center justify-center rounded-[28px] bg-orange-500 shadow-md mb-5 border-4 border-orange-100">
-                            <Ionicons name="school" size={44} color="#FFFFFF" />
+        <SafeAreaView className="flex-1 bg-fpt-grayBg">
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
+                <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }} keyboardShouldPersistTaps="handled">
+                    <View className="w-full max-w-[440px] self-center">
+                        <View className="mb-8 flex-row items-center">
+                            <View className="mr-3 h-12 w-12 items-center justify-center rounded-2xl bg-fpt-orange">
+                                <Ionicons name="school" size={26} color="#FFFFFF" />
+                            </View>
+                            <View>
+                                <Text className="text-lg font-bold tracking-wider text-slate-900">FPT EDUCATION</Text>
+                                <Text className="mt-0.5 text-xs text-slate-500">Kết nối tri thức · Kiến tạo tương lai</Text>
+                            </View>
                         </View>
-                        <Text className="text-[11px] font-extrabold tracking-[2px] text-fpt-orange">
-                            FPT EDUCATION PORTAL
-                        </Text>
-                        <Text className="mt-1 text-3xl font-black text-slate-900">
-                            FPT TECH EDUCATION
-                        </Text>
-                        <Text className="text-sm text-slate-500 mt-2">
-                            Không gian học tập dành riêng cho bạn
-                        </Text>
-                    </View>
-
-                    <View className="rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
-                    {errorMessage ? (
-                        <View className="mb-4 flex-row items-center rounded-2xl bg-red-50 p-3.5 border border-red-100">
-                            <Ionicons name="alert-circle" size={20} color="#EF4444" />
-                            <Text className="ml-2.5 flex-1 text-xs font-medium text-red-700">
-                                {errorMessage}
-                            </Text>
+                        <View className="mb-6 rounded-3xl bg-fpt-blue p-6">
+                            <View className="mb-5 self-start rounded-full bg-white/15 px-3 py-1.5">
+                                <Text className="text-xs font-semibold text-white">KHÔNG GIAN HỌC TẬP</Text>
+                            </View>
+                            <Text className="text-3xl font-bold leading-10 text-white">Chào mừng bạn{ '\n' }trở lại!</Text>
+                            <Text className="mt-3 text-sm leading-6 text-blue-100">Lịch học, khóa học và kết nối với giảng viên — tất cả trong một ứng dụng.</Text>
                         </View>
-                    ) : null}
-
-                    {/* Inputs */}
-                    <FptInput
-                        label="Email hoặc Tên đăng nhập"
-                        placeholder="admin@gmail.com, student@fpt.edu.vn..."
-                        value={username}
-                        onChangeText={(text) => {
-                            setUsername(text);
-                            if (errorMessage) setErrorMessage('');
-                        }}
-                        autoCapitalize="none"
-                        icon={<Ionicons name="person-outline" size={18} color="#718096" />}
-                    />
-
-                    <FptInput
-                        label="Mật khẩu"
-                        placeholder="Nhập mật khẩu..."
-                        value={password}
-                        onChangeText={(text) => {
-                            setPassword(text);
-                            if (errorMessage) setErrorMessage('');
-                        }}
-                        isPassword
-                        icon={<Ionicons name="lock-closed-outline" size={18} color="#718096" />}
-                    />
-
-                    {/* Submit Button */}
-                    <View className="mt-4">
-                        <FptButton
-                            title="Đăng nhập"
-                            onPress={handleLogin}
-                            loading={loading}
-                            size="lg"
-                        />
+                        <View className="rounded-3xl border border-slate-200/70 bg-white p-5">
+                            <Text className="mb-1 text-xl font-bold text-slate-900">Đăng nhập</Text>
+                            <Text className="mb-6 text-sm leading-5 text-slate-500">Sử dụng tài khoản FPT Education của bạn.</Text>
+                            {errorMessage ? (
+                                <View accessibilityRole="alert" className="mb-5 rounded-2xl border border-red-100 bg-red-50 p-3">
+                                    <Text className="text-sm leading-5 text-red-700">{errorMessage}</Text>
+                                </View>
+                            ) : null}
+                            <FptInput label="Email hoặc tên đăng nhập" placeholder="Nhập email của bạn" value={username}
+                                onChangeText={(text) => { setUsername(text); setErrorMessage(''); }}
+                                autoCapitalize="none" autoCorrect={false} autoComplete="username" textContentType="username"
+                                returnKeyType="next" editable={!loading}
+                                icon={<Ionicons name="person-outline" size={19} color="#64748B" />} />
+                            <FptInput label="Mật khẩu" placeholder="Nhập mật khẩu" value={password}
+                                onChangeText={(text) => { setPassword(text); setErrorMessage(''); }}
+                                isPassword autoCapitalize="none" autoComplete="current-password" textContentType="password"
+                                returnKeyType="go" onSubmitEditing={() => { if (!loading) void handleLogin(); }} editable={!loading}
+                                icon={<Ionicons name="lock-closed-outline" size={19} color="#64748B" />} />
+                            <View className="mt-2">
+                                <FptButton title="Đăng nhập" onPress={handleLogin} loading={loading} size="lg"
+                                    iconRight={<Ionicons name="arrow-forward" size={20} color="#FFFFFF" />} />
+                            </View>
+                        </View>
+                        <View className="mt-5 flex-row flex-wrap items-center justify-center">
+                            <Text className="text-sm text-slate-500">Bạn mới đến FPT Education? </Text>
+                            <TouchableOpacity accessibilityRole="button" className="min-h-[44px] justify-center" onPress={() => router.push('/(auth)/register')}>
+                                <Text className="text-sm font-bold text-fpt-orange">Tạo tài khoản</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    </View>
-
-                    {/* Register Link */}
-                    <View className="mt-7 flex-row items-center justify-center">
-                        <Text className="text-sm text-gray-500">Chưa có tài khoản? </Text>
-                        <TouchableOpacity
-                            activeOpacity={0.7}
-                            onPress={() => router.push('/(auth)/register')}
-                        >
-                            <Text className="text-sm font-bold text-fpt-orange">Đăng ký ngay</Text>
-                        </TouchableOpacity>
-                    </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface FptHeaderProps {
@@ -10,6 +11,8 @@ export interface FptHeaderProps {
     onBack?: () => void;
     rightAction?: React.ReactNode;
     className?: string;
+    /** Enable when the screen is not already wrapped in a top SafeAreaView. */
+    safeArea?: boolean;
 }
 
 export const FptHeader: React.FC<FptHeaderProps> = ({
@@ -19,8 +22,10 @@ export const FptHeader: React.FC<FptHeaderProps> = ({
     onBack,
     rightAction,
     className = '',
+    safeArea = false,
 }) => {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     const handleBack = () => {
         if (onBack) {
@@ -32,14 +37,17 @@ export const FptHeader: React.FC<FptHeaderProps> = ({
 
     return (
         <View
-            className={`flex-row items-center justify-between border-b border-gray-100 bg-white px-4 py-3.5 ${className}`}
+            style={{ paddingTop: (safeArea ? insets.top : 0) + 14 }}
+            className={`flex-row items-center justify-between border-b border-gray-100 bg-white px-5 py-4 ${className}`}
         >
             <View className="flex-row items-center flex-1">
                 {showBack && (
                     <TouchableOpacity
                         onPress={handleBack}
                         activeOpacity={0.7}
-                        className="mr-3 rounded-full bg-gray-50 p-2 border border-gray-200"
+                        accessibilityRole="button"
+                        accessibilityLabel="Quay lại"
+                        className="mr-3 min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl bg-slate-50 border border-slate-100"
                     >
                         <Ionicons name="arrow-back" size={20} color="#262626" />
                     </TouchableOpacity>

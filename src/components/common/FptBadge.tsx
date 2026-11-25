@@ -31,6 +31,7 @@ export const FptBadge: React.FC<FptBadgeProps> = ({
                     defaultLabel: 'Đang học',
                 };
             case 'WAITING_PAYMENT':
+            case 'UNPAID':
             case 'PENDING':
                 return {
                     bg: 'bg-amber-50',
@@ -87,13 +88,13 @@ export const FptBadge: React.FC<FptBadgeProps> = ({
 
     const config = getBadgeConfig();
     const displayLabel = label || config.defaultLabel;
-    const padding = size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs';
+    const padding = size === 'sm' ? 'px-2.5 py-1' : 'px-3 py-1.5';
 
     return (
         <View
             className={`self-start rounded-full border ${config.bg} ${config.border} ${padding}`}
         >
-            <Text className={`font-medium ${config.text}`}>{displayLabel}</Text>
+            <Text className={`text-xs font-semibold ${config.text}`}>{displayLabel}</Text>
         </View>
     );
 };

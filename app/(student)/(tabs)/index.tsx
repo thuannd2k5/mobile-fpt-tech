@@ -5,7 +5,6 @@ import {
     ScrollView,
     RefreshControl,
     TouchableOpacity,
-    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,10 +14,14 @@ import { callFetchCourse, callFetchMyEnrollments, callFetchMyInvoices } from '@/
 import { ICourse, IPortalEnrollment, IPortalInvoice } from '@/types/backend';
 import { FptCard, FptBadge, FptLoading } from '@/components/common';
 
+import { isInvoicePayable } from '@/utils/invoices';
+import FptErrorBanner from '@/components/common/FptErrorBanner';
+
 export default function StudentDashboardScreen() {
     const router = useRouter();
     const { user } = useAppSelector((state) => state.account);
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [courses, setCourses] = useState<ICourse[]>([]);
@@ -26,6 +29,7 @@ export default function StudentDashboardScreen() {
     const [myInvoices, setMyInvoices] = useState<IPortalInvoice[]>([]);
 
     const loadData = useCallback(async () => {
+        setLoadError('');
         try {
             const [coursesRes, enrollmentsRes, invoicesRes] = await Promise.allSettled([
                 callFetchCourse('pageSize=6'),
@@ -33,6 +37,9 @@ export default function StudentDashboardScreen() {
                 callFetchMyInvoices(),
             ]);
 
+            if ([coursesRes, enrollmentsRes, invoicesRes].some((result) => result.status === 'rejected')) {
+                setLoadError('Chưa tải được đầy đủ dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
+            }
             if (coursesRes.status === 'fulfilled' && coursesRes.value?.data?.result) {
                 setCourses(coursesRes.value.data.result);
             }
@@ -43,7 +50,7 @@ export default function StudentDashboardScreen() {
                 setMyInvoices(invoicesRes.value.data);
             }
         } catch {
-            // handle error silently
+            setLoadError('Không thể tải tổng quan. Vui lòng thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -63,7 +70,7 @@ export default function StudentDashboardScreen() {
         (e) => (e.status || '').toUpperCase() === 'STUDYING'
     );
     const pendingInvoices = myInvoices.filter(
-        (i) => (i.status || '').toUpperCase() === 'PENDING' || (i.status || '').toUpperCase() === 'WAITING_PAYMENT'
+        (i) => isInvoicePayable(i.status)
     );
 
     const formatPrice = (val?: string | number) => {
@@ -77,7 +84,7 @@ export default function StudentDashboardScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
             <ScrollView
                 className="flex-1"
                 contentContainerStyle={{ paddingBottom: 32 }}
@@ -90,20 +97,29 @@ export default function StudentDashboardScreen() {
                     />
                 }
             >
-                {/* Header Profile Greeting */}
-                <View className="bg-white px-5 py-4 border-b border-gray-100 flex-row items-center justify-between">
-                    <View className="flex-1">
-                        <Text className="text-xs font-semibold uppercase tracking-wider text-fpt-orange">
-                            FPT TECH EDUCATION
-                        </Text>
-                        <Text className="text-xl font-black text-gray-900 mt-0.5" numberOfLines={1}>
-                            Xin chào, {user.name || 'Học viên'}!
-                        </Text>
+                <View className="px-5 pt-5">
+                    <View className="mb-5 flex-row items-center justify-between">
+                        <View className="flex-1 pr-3">
+                            <Text className="text-xs font-bold tracking-widest text-fpt-orange">FPT EDUCATION</Text>
+                            <Text className="mt-1 text-xl font-bold text-slate-900" numberOfLines={2}>Xin chào, {user.name || 'bạn'}!</Text>
+                        </View>
+                        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Mở hồ sơ cá nhân" onPress={() => router.push('/(student)/(tabs)/profile')}
+                            className="h-12 w-12 items-center justify-center rounded-2xl border border-orange-100 bg-orange-50">
+                            <Text className="text-lg font-bold text-fpt-orange">{(user.name || 'U').charAt(0).toUpperCase()}</Text>
+                        </TouchableOpacity>
                     </View>
-                    <View className="flex-row items-center">
-                        <FptBadge status="STUDYING" label="Học viên" size="sm" />
+                    <View className="rounded-3xl bg-fpt-blue p-5">
+                        <Text className="text-xs font-semibold tracking-wider text-blue-100">HÀNH TRÌNH HỌC TẬP</Text>
+                        <Text className="mt-2 text-2xl font-bold text-white">Mỗi ngày, tiến xa hơn.</Text>
+                        <Text className="mt-2 text-sm leading-6 text-blue-100">Theo dõi lịch học và tiếp tục chinh phục mục tiêu của bạn.</Text>
+                        <TouchableOpacity accessibilityRole="button" onPress={() => router.push('/(student)/(tabs)/schedule')}
+                            className="mt-4 min-h-[44px] flex-row items-center self-start rounded-xl bg-white px-4 py-3">
+                            <Text className="mr-3 text-sm font-bold text-fpt-blue">Xem lịch học</Text>
+                            <Ionicons name="arrow-forward" size={17} color="#0050B3" />
+                        </TouchableOpacity>
                     </View>
                 </View>
+                {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
 
                 {/* Quick Stats Grid */}
                 <View className="px-5 pt-5 pb-2">
@@ -116,7 +132,7 @@ export default function StudentDashboardScreen() {
                             <View className="h-10 w-10 items-center justify-center rounded-xl bg-orange-50 mb-3">
                                 <Ionicons name="book" size={22} color="#F26522" />
                             </View>
-                            <Text className="text-2xl font-black text-gray-900">
+                            <Text className="text-2xl font-bold text-gray-900">
                                 {activeEnrollments.length}
                             </Text>
                             <Text className="text-xs text-gray-500 mt-0.5">Khóa học đang học</Text>
@@ -130,7 +146,7 @@ export default function StudentDashboardScreen() {
                             <View className="h-10 w-10 items-center justify-center rounded-xl bg-amber-50 mb-3">
                                 <Ionicons name="receipt" size={22} color="#D97706" />
                             </View>
-                            <Text className="text-2xl font-black text-gray-900">
+                            <Text className="text-2xl font-bold text-gray-900">
                                 {pendingInvoices.length}
                             </Text>
                             <Text className="text-xs text-gray-500 mt-0.5">Hóa đơn cần đóng</Text>
@@ -138,30 +154,16 @@ export default function StudentDashboardScreen() {
                     </View>
                 </View>
 
-                {/* Banner Promotion */}
-                <View className="px-5 py-3">
-                    <View className="rounded-2xl bg-gradient-to-r bg-orange-500 p-5 shadow-sm">
-                        <Text className="text-xs font-bold uppercase tracking-wider text-orange-100">
-                            Cơ hội học bổng
-                        </Text>
-                        <Text className="text-lg font-black text-white mt-1 leading-snug">
-                            Trở thành Kỹ sư phần mềm chuyên nghiệp cùng FPT
-                        </Text>
-                        <Text className="text-xs text-orange-100 mt-1">
-                            Lộ trình chuẩn doanh nghiệp - Hỗ trợ thực tập tại FPT Software
-                        </Text>
-                    </View>
-                </View>
-
                 {/* Featured Courses Section */}
                 <View className="mt-4">
                     <View className="flex-row items-center justify-between px-5 mb-3">
-                        <Text className="text-lg font-bold text-gray-900">Khóa học nổi bật</Text>
+                        <Text className="text-lg font-bold text-gray-900">Khám phá khóa học</Text>
                         <TouchableOpacity onPress={() => router.push('/(student)/(tabs)/courses')}>
                             <Text className="text-xs font-bold text-fpt-orange">Xem tất cả</Text>
                         </TouchableOpacity>
                     </View>
 
+                    {!courses.length && !loadError ? <Text className="px-5 py-6 text-sm text-slate-500">Chưa có khóa học để hiển thị.</Text> : null}
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}

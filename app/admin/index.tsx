@@ -102,7 +102,7 @@ export default function AdminDashboardScreen() {
                 <View className="overflow-hidden rounded-[28px] bg-slate-900 p-6">
                     <View className="absolute -right-7 -top-7 h-28 w-28 rounded-full bg-orange-500/30" />
                     <Text className="text-xs font-bold tracking-[2px] text-orange-300">FPT EDUCATION / ADMIN</Text>
-                    <Text className="mt-2 text-2xl font-black text-white">Xin chào, {user.name || 'Quản trị viên'}</Text>
+                    <Text className="mt-2 text-2xl font-bold text-white">Xin chào, {user.name || 'Quản trị viên'}</Text>
                     <Text className="mt-2 text-sm leading-5 text-slate-300">Quản lý dữ liệu đào tạo, người dùng và vận hành hệ thống.</Text>
                 </View>
 
@@ -127,7 +127,7 @@ export default function AdminDashboardScreen() {
                             <View className="h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: module.background }}>
                                 <Ionicons name={module.icon} size={21} color={module.color} />
                             </View>
-                            <Text className="mt-4 text-2xl font-black text-slate-900">{counts[module.key] ?? '—'}</Text>
+                            <Text className="mt-4 text-2xl font-bold text-slate-900">{counts[module.key] ?? '—'}</Text>
                             <Text className="mt-1 text-sm font-semibold text-slate-700">{module.label}</Text>
                             <View className="mt-3 flex-row items-center">
                                 <Text className="text-xs font-bold" style={{ color: module.color }}>Mở quản lý</Text>

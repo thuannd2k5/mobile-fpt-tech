@@ -69,19 +69,19 @@ export const FptButton: React.FC<FptButtonProps> = ({
     const getSizeStyle = () => {
         switch (size) {
             case 'sm':
-                return 'px-3 py-1.5 rounded-lg';
+                return 'min-h-[44px] px-4 py-2 rounded-xl';
             case 'lg':
                 return 'min-h-[56px] px-6 py-4 rounded-2xl';
             case 'md':
             default:
-                return 'px-4 py-3 rounded-xl';
+                return 'min-h-[48px] px-4 py-3 rounded-xl';
         }
     };
 
     const getTextSize = () => {
         switch (size) {
             case 'sm':
-                return 'text-xs';
+                return 'text-sm';
             case 'lg':
                 return 'text-lg';
             case 'md':
@@ -95,6 +95,7 @@ export const FptButton: React.FC<FptButtonProps> = ({
             activeOpacity={0.8}
             disabled={disabled || loading}
             accessibilityRole="button"
+            accessibilityState={{ disabled: disabled || loading, busy: loading }}
             className={`flex-row items-center justify-center border ${getVariantStyle()} ${getSizeStyle()} ${className}`}
             {...props}
         >

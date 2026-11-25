@@ -19,7 +19,7 @@ export const COLORS = {
 
     // Neutrals
     white: '#FFFFFF',
-    background: '#F8F9FA',
+    background: '#F4F6FA',
     cardBackground: '#FFFFFF',
     border: '#E8E8E8',
     borderLight: '#F0F0F0',

@@ -81,7 +81,7 @@ export default function ChangePasswordScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1 bg-white"
         >
-            <FptHeader title="Đổi mật khẩu" showBack />
+            <FptHeader safeArea title="Đổi mật khẩu" showBack />
             <ScrollView
                 className="flex-1 px-6 py-6"
                 keyboardShouldPersistTaps="always"

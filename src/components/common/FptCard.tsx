@@ -16,14 +16,14 @@ export const FptCard: React.FC<FptCardProps> = ({
 }) => {
     const cardContent = (
         <View
-            className={`rounded-3xl border border-slate-100 bg-white p-4 shadow-sm ${className}`}
+            className={`rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm ${className}`}
             style={[
                 {
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.06,
-                    shadowRadius: 12,
-                    elevation: 3,
+                    shadowOpacity: 0.035,
+                    shadowRadius: 8,
+                    elevation: 1,
                 },
                 style,
             ]}
@@ -35,7 +35,7 @@ export const FptCard: React.FC<FptCardProps> = ({
 
     if (onPress) {
         return (
-            <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+            <TouchableOpacity accessibilityRole="button" activeOpacity={0.85} onPress={onPress}>
                 {cardContent}
             </TouchableOpacity>
         );

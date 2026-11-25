@@ -10,15 +10,20 @@ import {
     RefreshControl,
     ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import dayjs from 'dayjs';
+import { isInvoicePayable } from '@/utils/invoices';
+import { paymentBank } from '@/config/payment';
+import FptErrorBanner from '@/components/common/FptErrorBanner';
 import { callFetchMyInvoices, callFetchMyPayments } from '@/api';
 import { IPortalInvoice, IPortalPayment } from '@/types/backend';
 import { FptCard, FptBadge, FptLoading, FptEmptyState, FptButton } from '@/components/common';
 
 export default function StudentInvoicesScreen() {
+    const insets = useSafeAreaInsets();
+    const [loadError, setLoadError] = useState('');
     const [tab, setTab] = useState<'INVOICES' | 'PAYMENTS'>('INVOICES');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'PAID'>('ALL');
     const [loading, setLoading] = useState(true);
@@ -29,12 +34,16 @@ export default function StudentInvoicesScreen() {
     const [selectedInvoice, setSelectedInvoice] = useState<IPortalInvoice | null>(null);
 
     const loadData = useCallback(async () => {
+        setLoadError('');
         try {
             const [invoicesRes, paymentsRes] = await Promise.allSettled([
                 callFetchMyInvoices(),
                 callFetchMyPayments(),
             ]);
 
+            if ([invoicesRes, paymentsRes].some((result) => result.status === 'rejected')) {
+                setLoadError('Không tải được đầy đủ thông tin học phí. Dữ liệu đang hiển thị có thể chưa cập nhật.');
+            }
             if (invoicesRes.status === 'fulfilled' && Array.isArray(invoicesRes.value?.data)) {
                 setInvoices(invoicesRes.value.data);
             }
@@ -42,7 +51,7 @@ export default function StudentInvoicesScreen() {
                 setPayments(paymentsRes.value.data);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể kết nối để tải học phí. Vui lòng thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -71,16 +80,16 @@ export default function StudentInvoicesScreen() {
 
     const filteredInvoices = invoices.filter((item) => {
         const s = (item.status || '').toUpperCase();
-        if (statusFilter === 'PENDING') return s === 'PENDING' || s === 'WAITING_PAYMENT';
+        if (statusFilter === 'PENDING') return isInvoicePayable(item.status);
         if (statusFilter === 'PAID') return s === 'PAID' || s === 'COMPLETED';
         return true;
     });
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
             {/* Header */}
-            <View className="bg-white px-5 pt-3 pb-3 border-b border-gray-100">
-                <Text className="text-2xl font-black text-gray-900">Học phí & Hóa đơn</Text>
+            <View className="bg-white px-5 pt-5 pb-4 border-b border-slate-100">
+                <Text className="text-2xl font-bold text-gray-900">Học phí & Hóa đơn</Text>
                 <Text className="text-xs text-gray-500 mt-0.5">
                     Quản lý các khoản học phí và lịch sử thanh toán
                 </Text>
@@ -153,6 +162,7 @@ export default function StudentInvoicesScreen() {
                 )}
             </View>
 
+            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
             {loading && !refreshing ? (
                 <FptLoading message="Đang tải dữ liệu học phí..." />
             ) : tab === 'INVOICES' ? (
@@ -168,17 +178,15 @@ export default function StudentInvoicesScreen() {
                             tintColor="#F26522"
                         />
                     }
-                    ListEmptyComponent={
+                    ListEmptyComponent={loadError ? undefined :
                         <FptEmptyState
                             title="Không có hóa đơn"
-                            description="Bạn hiện không có khoản học phí nào cần thanh toán."
+                            description="Không có hóa đơn phù hợp với bộ lọc hiện tại."
                             icon="receipt-outline"
                         />
                     }
                     renderItem={({ item }) => {
-                        const isPending =
-                            (item.status || '').toUpperCase() === 'PENDING' ||
-                            (item.status || '').toUpperCase() === 'WAITING_PAYMENT';
+                        const isPending = isInvoicePayable(item.status);
                         const courseName =
                             item.enrollment_id?.class_id?.course_id?.name ||
                             item.enrollment_id?.class_id?.class_name ||
@@ -209,7 +217,7 @@ export default function StudentInvoicesScreen() {
                                             : 'N/A'}
                                     </Text>
 
-                                    <View className="mt-3 rounded-xl bg-gray-50 p-3">
+                                    <View className="mt-3 rounded-xl bg-fpt-grayBg p-3">
                                         <View className="flex-row items-center justify-between">
                                             <Text className="text-xs text-gray-500">Số tiền gốc</Text>
                                             <Text className="text-xs font-medium text-gray-800">
@@ -308,12 +316,12 @@ export default function StudentInvoicesScreen() {
                 onRequestClose={() => setSelectedInvoice(null)}
             >
                 <View className="flex-1 justify-end bg-black/50">
-                    <View className="max-h-[90%] rounded-t-3xl bg-white p-6">
+                    <View className="max-h-[90%] rounded-t-3xl bg-white p-6" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
                         <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
-                            <Text className="text-lg font-bold text-gray-900">
+                            <Text className="flex-1 pr-2 text-lg font-bold text-gray-900">
                                 Hướng dẫn thanh toán học phí
                             </Text>
-                            <TouchableOpacity onPress={() => setSelectedInvoice(null)} className="p-1">
+                            <TouchableOpacity onPress={() => setSelectedInvoice(null)} accessibilityRole="button" accessibilityLabel="Đóng hướng dẫn" className="min-h-[44px] min-w-[44px] items-center justify-center">
                                 <Ionicons name="close" size={22} color="#718096" />
                             </TouchableOpacity>
                         </View>
@@ -321,50 +329,40 @@ export default function StudentInvoicesScreen() {
                         <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
                             {selectedInvoice && (
                                 <>
-                                    {/* VietQR Code Image */}
-                                    <View className="items-center justify-center p-4 rounded-2xl bg-gray-50 border border-gray-100 mb-4">
-                                        <Image
-                                            source={{
-                                                uri: `https://img.vietqr.io/image/970423-123456789-compact2.png?amount=${
-                                                    selectedInvoice.final_amount ?? selectedInvoice.amount
-                                                }&addInfo=HOCPHI%20${selectedInvoice._id?.slice(-8).toUpperCase()}`,
-                                            }}
-                                            style={{ width: 220, height: 220, resizeMode: 'contain' }}
-                                        />
-                                        <Text className="mt-2 text-xs text-gray-500 font-medium">
-                                            Quét mã QR bằng App Ngân hàng bất kỳ
-                                        </Text>
-                                    </View>
-
-                                    {/* Bank Details */}
-                                    <View className="space-y-3 rounded-2xl border border-gray-100 bg-white p-4">
-                                        <View className="flex-row items-center justify-between">
-                                            <Text className="text-xs text-gray-500">Ngân hàng</Text>
-                                            <Text className="text-sm font-bold text-gray-900">
-                                                TPBank (Tiên Phong Bank)
-                                            </Text>
+                                    {paymentBank ? (
+                                        <View className="mb-4 items-center rounded-2xl border border-slate-100 bg-fpt-grayBg p-4">
+                                            <Image source={{ uri: paymentBank.qrUrl(selectedInvoice.final_amount ?? selectedInvoice.amount, selectedInvoice._id || '') }}
+                                                accessibilityLabel="Mã QR chuyển khoản học phí"
+                                                onError={() => Alert.alert('Không tải được QR', 'Vui lòng dùng thông tin chuyển khoản bên dưới hoặc liên hệ phòng đào tạo.')}
+                                                style={{ width: 220, height: 220, resizeMode: 'contain' }} />
+                                            <Text className="mt-3 text-center text-xs leading-5 text-slate-500">Kiểm tra người nhận và số tiền trong ứng dụng ngân hàng trước khi chuyển khoản.</Text>
                                         </View>
-
-                                        <View className="flex-row items-center justify-between pt-2 border-t border-gray-50">
-                                            <Text className="text-xs text-gray-500">Số tài khoản</Text>
-                                            <TouchableOpacity
-                                                onPress={() => copyToClipboard('123456789', 'Số tài khoản')}
-                                                className="flex-row items-center"
-                                            >
-                                                <Text className="text-sm font-bold text-fpt-orange mr-1">
-                                                    123456789
-                                                </Text>
-                                                <Ionicons name="copy-outline" size={14} color="#F26522" />
+                                    ) : (
+                                        <View className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                            <Ionicons name="information-circle-outline" size={24} color="#B45309" />
+                                            <Text className="mt-2 text-base font-bold text-amber-900">Liên hệ phòng đào tạo để nộp học phí</Text>
+                                            <Text className="mt-2 text-sm leading-6 text-amber-800">Thông tin tài khoản nhận học phí chưa được thiết lập. Bạn có thể cung cấp mã hóa đơn bên dưới để được hướng dẫn.</Text>
+                                        </View>
+                                    )}
+                                    <View className="rounded-2xl border border-slate-100 bg-white p-4">
+                                        {paymentBank ? <>
+                                            <View className="mb-3">
+                                                <Text className="text-xs text-slate-500">Ngân hàng</Text>
+                                                <Text className="mt-1 text-sm font-bold text-slate-900">{paymentBank.bankName}</Text>
+                                            </View>
+                                            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Sao chép số tài khoản" onPress={() => copyToClipboard(paymentBank!.accountNumber, 'Số tài khoản')}
+                                                className="mb-3 min-h-[44px] flex-row items-center justify-between">
+                                                <View className="flex-1 pr-3">
+                                                    <Text className="text-xs text-slate-500">Số tài khoản</Text>
+                                                    <Text className="mt-1 text-base font-bold text-fpt-orange">{paymentBank.accountNumber}</Text>
+                                                </View>
+                                                <Ionicons name="copy-outline" size={18} color="#F26522" />
                                             </TouchableOpacity>
-                                        </View>
-
-                                        <View className="flex-row items-center justify-between pt-2 border-t border-gray-50">
-                                            <Text className="text-xs text-gray-500">Chủ tài khoản</Text>
-                                            <Text className="text-sm font-bold text-gray-900">
-                                                FPT TECH EDUCATION
-                                            </Text>
-                                        </View>
-
+                                            <View className="mb-3">
+                                                <Text className="text-xs text-slate-500">Chủ tài khoản</Text>
+                                                <Text className="mt-1 text-sm font-bold text-slate-900">{paymentBank.accountName}</Text>
+                                            </View>
+                                        </> : null}
                                         <View className="flex-row items-center justify-between pt-2 border-t border-gray-50">
                                             <Text className="text-xs text-gray-500">Số tiền</Text>
                                             <TouchableOpacity
@@ -412,13 +410,10 @@ export default function StudentInvoicesScreen() {
 
                                     <View className="mt-4 mb-6">
                                         <FptButton
-                                            title="Đã hoàn tất chuyển khoản"
+                                            title="Đóng hướng dẫn"
                                             onPress={() => {
                                                 setSelectedInvoice(null);
-                                                Alert.alert(
-                                                    'Cảm ơn bạn',
-                                                    'Hệ thống sẽ đối soát và cập nhật trạng thái hóa đơn ngay khi nhận được tiền.'
-                                                );
+
                                             }}
                                             size="lg"
                                         />

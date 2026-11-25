@@ -86,7 +86,7 @@ export default function RegisterScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1 bg-white"
         >
-            <FptHeader title="Tạo tài khoản học viên" showBack />
+            <FptHeader safeArea title="Tạo tài khoản học viên" showBack />
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="always"

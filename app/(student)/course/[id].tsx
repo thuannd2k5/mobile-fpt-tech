@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { canRegisterForCourse } from '@/types/portal';
 import { useAppSelector } from '@/redux/hooks';
 import {
     callFetchCourseById,
@@ -15,13 +17,17 @@ import {
     callRegisterForCourse,
 } from '@/api';
 import { ICourse, IClassroom } from '@/types/backend';
-import { FptHeader, FptButton, FptLoading, FptBadge } from '@/components/common';
+import { FptHeader, FptButton, FptLoading } from '@/components/common';
+
+import FptErrorBanner from '@/components/common/FptErrorBanner';
 
 export default function CourseDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user } = useAppSelector((state) => state.account);
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [course, setCourse] = useState<ICourse | null>(null);
@@ -29,6 +35,7 @@ export default function CourseDetailScreen() {
     const [selectedClassId, setSelectedClassId] = useState<string>('');
 
     const loadData = useCallback(async () => {
+        setLoadError('');
         if (!id) return;
         try {
             const [courseRes, classesRes] = await Promise.allSettled([
@@ -36,6 +43,9 @@ export default function CourseDetailScreen() {
                 callFetchOpenClassroomsForCourse(id),
             ]);
 
+            if ([courseRes, classesRes].some((result) => result.status === 'rejected')) {
+                setLoadError('Không thể tải đầy đủ thông tin. Vui lòng thử lại.');
+            }
             if (courseRes.status === 'fulfilled' && courseRes.value?.data) {
                 setCourse(courseRes.value.data);
             }
@@ -46,7 +56,7 @@ export default function CourseDetailScreen() {
                 }
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải đầy đủ thông tin. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
         }
@@ -63,6 +73,7 @@ export default function CourseDetailScreen() {
     };
 
     const handleEnroll = async () => {
+        if (!canRegisterForCourse(user.role?.name) || loadError || course?.status?.toUpperCase() === 'INACTIVE') return;
         if (!selectedClassId) {
             Alert.alert('Thông báo', 'Vui lòng chọn một lớp học để đăng ký.');
             return;
@@ -115,7 +126,8 @@ export default function CourseDetailScreen() {
     if (loading) {
         return (
             <View className="flex-1 bg-white">
-                <FptHeader title="Chi tiết khóa học" showBack />
+                <FptHeader safeArea title="Chi tiết khóa học" showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
                 <FptLoading message="Đang tải thông tin khóa học..." />
             </View>
         );
@@ -124,7 +136,8 @@ export default function CourseDetailScreen() {
     if (!course) {
         return (
             <View className="flex-1 bg-white">
-                <FptHeader title="Chi tiết khóa học" showBack />
+                <FptHeader safeArea title="Chi tiết khóa học" showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
                 <View className="flex-1 items-center justify-center p-6">
                     <Text className="text-gray-500">Không tìm thấy thông tin khóa học.</Text>
                 </View>
@@ -133,8 +146,9 @@ export default function CourseDetailScreen() {
     }
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <FptHeader title={course.name} showBack />
+        <View className="flex-1 bg-fpt-grayBg">
+            <FptHeader safeArea title={course.name} showBack />
+                {loadError ? <FptErrorBanner message={loadError} onRetry={() => { void loadData(); }} /> : null}
 
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
                 {/* Hero Header Banner */}
@@ -143,7 +157,7 @@ export default function CourseDetailScreen() {
                         <Ionicons name="desktop-outline" size={64} color="#F26522" />
                     </View>
 
-                    <Text className="text-2xl font-black text-gray-900 leading-tight">
+                    <Text className="text-2xl font-bold text-gray-900 leading-tight">
                         {course.name}
                     </Text>
 
@@ -166,7 +180,7 @@ export default function CourseDetailScreen() {
 
                     <View className="mt-4 pt-4 border-t border-gray-100 flex-row items-center justify-between">
                         <Text className="text-sm text-gray-500">Học phí trọn khóa</Text>
-                        <Text className="text-2xl font-black text-fpt-orange">
+                        <Text className="text-2xl font-bold text-fpt-orange">
                             {formatPrice(course.price)}
                         </Text>
                     </View>
@@ -193,7 +207,7 @@ export default function CourseDetailScreen() {
                     </View>
 
                     {openClasses.length === 0 ? (
-                        <View className="rounded-xl bg-gray-50 p-5 items-center justify-center">
+                        <View className="rounded-xl bg-fpt-grayBg p-5 items-center justify-center">
                             <Ionicons name="alert-circle-outline" size={28} color="#A0AEC0" />
                             <Text className="mt-2 text-xs font-medium text-gray-500 text-center">
                                 Hiện chưa có lớp học nào đang mở cho khóa học này. Vui lòng quay lại sau.
@@ -243,7 +257,7 @@ export default function CourseDetailScreen() {
                                             <View className="flex-row items-center">
                                                 <Ionicons name="time-outline" size={14} color="#718096" />
                                                 <Text className="ml-1 text-xs text-gray-600">
-                                                    Ca học: {cls.start_time || '08:00'} - {cls.end_time || '10:00'}
+                                                    Ca học: {cls.start_time || 'Chưa xếp giờ'} - {cls.end_time || 'Chưa xếp giờ'}
                                                 </Text>
                                             </View>
                                         )}
@@ -264,12 +278,12 @@ export default function CourseDetailScreen() {
             </ScrollView>
 
             {/* Bottom Action Floating Bar */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-lg">
+            <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-lg" style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
                 <FptButton
-                    title={submitting ? 'Đang xử lý...' : 'Đăng ký ghi danh khóa học'}
+                    title={!canRegisterForCourse(user.role?.name) ? 'Chỉ dành cho tài khoản học viên' : 'Đăng ký ghi danh khóa học'}
                     onPress={handleEnroll}
                     loading={submitting}
-                    disabled={openClasses.length === 0 || submitting}
+                    disabled={openClasses.length === 0 || submitting || !!loadError || !canRegisterForCourse(user.role?.name) || course.status?.toUpperCase() === 'INACTIVE'}
                     size="lg"
                 />
             </View>

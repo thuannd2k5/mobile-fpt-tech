@@ -3,14 +3,13 @@ import {
     View,
     Text,
     FlatList,
-    TouchableOpacity,
     RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import FptErrorBanner from '@/components/common/FptErrorBanner';
 import 'dayjs/locale/vi';
 import { callFetchMyConversations } from '@/api';
 import { IConversation } from '@/types/backend';
@@ -19,21 +18,24 @@ import { FptHeader, FptCard, FptLoading, FptEmptyState } from '@/components/comm
 dayjs.extend(relativeTime);
 dayjs.locale('vi');
 
+
 export default function ConversationsScreen() {
     const router = useRouter();
 
+    const [loadError, setLoadError] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [conversations, setConversations] = useState<IConversation[]>([]);
 
     const fetchConversations = useCallback(async () => {
+        setLoadError('');
         try {
             const res = await callFetchMyConversations();
             if (res && res.data && Array.isArray(res.data)) {
                 setConversations(res.data);
             }
         } catch {
-            // handle error
+            setLoadError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -50,8 +52,9 @@ export default function ConversationsScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <FptHeader title="Hộp thư Tin nhắn" showBack />
+        <View className="flex-1 bg-fpt-grayBg">
+            <FptHeader safeArea title="Hộp thư Tin nhắn" showBack />
+            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
 
             {loading && !refreshing ? (
                 <FptLoading message="Đang tải các cuộc trò chuyện..." />
@@ -68,7 +71,7 @@ export default function ConversationsScreen() {
                             tintColor="#F26522"
                         />
                     }
-                    ListEmptyComponent={
+                    ListEmptyComponent={loadError ? undefined :
                         <FptEmptyState
                             title="Chưa có tin nhắn"
                             description="Bạn chưa có cuộc trò chuyện nào. Hãy liên hệ với Giảng viên hoặc Tư vấn viên khi cần hỗ trợ!"
