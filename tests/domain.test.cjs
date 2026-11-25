@@ -50,6 +50,28 @@ test('session expiry notifies subscribers and cleanup removes the subscription',
     assert.equal(count, 1);
 });
 
+test('logout clears local credentials and resets the account even when the server is offline', async () => {
+    const { logoutSession } = loadTs('src/utils/logout.ts');
+    const events = [];
+    await logoutSession({
+        revoke: async () => { events.push('revoke'); throw new Error('offline'); },
+        clear: async () => { events.push('clear'); },
+        reset: () => { events.push('reset'); },
+    });
+    assert.deepEqual(events, ['revoke', 'clear', 'reset']);
+});
+
+test('logout waits for local credential removal before resetting the account', async () => {
+    const { logoutSession } = loadTs('src/utils/logout.ts');
+    let reset = false;
+    await assert.rejects(logoutSession({
+        revoke: async () => {},
+        clear: async () => { throw new Error('storage unavailable'); },
+        reset: () => { reset = true; },
+    }), /storage unavailable/);
+    assert.equal(reset, false);
+});
+
 function refreshHarness(payload = { access_token: 'new-token' }, rejectRetry = false) {
     let accessToken = 'old-token';
     let onError;
@@ -84,9 +106,9 @@ function refreshHarness(payload = { access_token: 'new-token' }, rejectRetry = f
         },
         '@/utils/session': { notifySessionExpired: () => { expiredCount++; } },
     });
-    const unauthorized = () => onError({
+    const unauthorized = (url = '/invoices/me') => onError({
         response: { status: 401, data: { message: 'Unauthorized' } },
-        config: { url: '/invoices/me', headers: { Authorization: 'Bearer old-token' } },
+        config: { url, headers: { Authorization: 'Bearer old-token' } },
     });
     return { unauthorized, counts: () => ({ refreshCount, expiredCount, retryCount }) };
 }
@@ -96,6 +118,12 @@ test('simultaneous expired API requests refresh once and both retry with the new
     const results = await Promise.all([harness.unauthorized(), harness.unauthorized()]);
     assert.deepEqual(results, [{ data: 'retried' }, { data: 'retried' }]);
     assert.deepEqual(harness.counts(), { refreshCount: 1, expiredCount: 0, retryCount: 2 });
+});
+
+test('logout rejection does not start a token refresh before local sign-out', async () => {
+    const harness = refreshHarness();
+    await assert.rejects(harness.unauthorized('/auth/logout'));
+    assert.deepEqual(harness.counts(), { refreshCount: 0, expiredCount: 0, retryCount: 0 });
 });
 
 test('refresh response without an access token rejects and expires the session', async () => {

@@ -74,3 +74,13 @@ npm run typecheck
 npm run lint
 npx expo export --platform all
 ```
+
+## Khi iPhone không mở được Expo Go
+
+1. Giữ terminal Expo đang chạy và kết nối iPhone cùng Wi-Fi với máy tính.
+2. Trên Safari của iPhone, mở `http://<IP_LAN_MAY_TINH>:8081/status`. Kết quả đúng là `packager-status:running`. Nếu không mở được, cần xử lý mạng LAN/Firewall hoặc quyền Mạng cục bộ của Expo Go trong Cài đặt iPhone trước.
+3. Đăng nhập cùng tài khoản Expo trên CLI (`npx expo login`) và trong Expo Go. Cập nhật Expo Go từ App Store để hỗ trợ SDK 58.
+4. Sau khi cập nhật dependencies, dừng Metro cũ bằng Ctrl+C rồi chạy lại `npx expo start --go --clear` và quét QR mới.
+5. Nếu mạng không cho phép kết nối LAN, có thể thử `npx expo start --go --tunnel --clear`. Expo có thể yêu cầu cài `@expo/ngrok` lần đầu. Tunnel này chỉ phục vụ Metro, không tự mở kết nối backend ở cổng 8000.
+
+Không tắt toàn bộ Windows Firewall để chạy Expo. Nếu mở ngoại lệ mạng, chỉ cấp quyền cần thiết cho Node.js và các cổng phát triển đang dùng trên mạng tin cậy.

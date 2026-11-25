@@ -53,7 +53,7 @@ export default function AdminModuleScreen() {
     if (loading && !refreshing) return <FptLoading message={`Đang tải ${definition.title.toLowerCase()}...`} />;
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-slate-50" edges={['bottom']}>
             <FptHeader title={definition.title} subtitle={subtitle} showBack onBack={() => router.replace('/admin')} />
             <FlatList
                 data={items}

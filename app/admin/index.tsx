@@ -94,7 +94,7 @@ export default function AdminDashboardScreen() {
     if (loading && !refreshing) return <FptLoading message="Đang tải hệ thống quản trị..." />;
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50" edges={['top']}>
+        <SafeAreaView className="flex-1 bg-slate-50" edges={['bottom']}>
             <ScrollView
                 contentContainerStyle={{ padding: 20, paddingBottom: 36 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadDashboard(); }} colors={['#F26522']} />}

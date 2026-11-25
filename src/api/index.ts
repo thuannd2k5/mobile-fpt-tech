@@ -65,7 +65,7 @@ export const callRefreshToken = () =>
     axios.get<any, IBackendRes<{ access_token: string }>>('/auth/refresh');
 
 export const callLogout = () =>
-    axios.post<any, IBackendRes<string>>('/auth/logout');
+    axios.post<any, IBackendRes<string>>('/auth/logout', undefined, { timeout: 3000 });
 
 export const callUpdateMyProfile = (value: {
     name?: string;

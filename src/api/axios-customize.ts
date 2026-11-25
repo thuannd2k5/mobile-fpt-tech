@@ -80,6 +80,7 @@ instance.interceptors.response.use(
             originalRequest &&
             !originalRequest.url?.includes('/auth/login') &&
             !originalRequest.url?.includes('/auth/register') &&
+            !originalRequest.url?.includes('/auth/logout') &&
             !originalRequest.url?.includes('/auth/refresh') &&
             !originalRequest[NO_RETRY_HEADER]
         ) {
