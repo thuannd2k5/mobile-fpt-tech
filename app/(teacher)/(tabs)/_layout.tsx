@@ -1,11 +1,11 @@
 import React from 'react';
 import FptTabs from '@/components/common/FptTabs';
 
-export default function PortalTabsLayout() {
-    return <FptTabs items={[
-        { name: 'index', title: 'Lịch dạy', icon: 'calendar-outline', activeIcon: 'calendar' },
-        { name: 'classes', title: 'Lớp học', icon: 'school-outline', activeIcon: 'school' },
-        { name: 'chat', title: 'Tin nhắn', icon: 'chatbubbles-outline', activeIcon: 'chatbubbles' },
-        { name: 'profile', title: 'Cá nhân', icon: 'person-outline', activeIcon: 'person' },
+export default function TeacherTabsLayout() {
+    return <FptTabs hidden={['classes', 'chat']} items={[
+        { name: 'index', title: 'Lớp dạy', icon: 'school-outline', activeIcon: 'school' },
+        { name: 'availability', title: 'Lịch rảnh', icon: 'calendar-outline', activeIcon: 'calendar' },
+        { name: 'students', title: 'Học viên', icon: 'people-outline', activeIcon: 'people' },
+        { name: 'profile', title: 'Tài khoản', icon: 'person-outline', activeIcon: 'person' },
     ]} />;
 }

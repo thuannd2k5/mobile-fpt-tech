@@ -64,7 +64,23 @@ EXPO_PUBLIC_PAYMENT_ACCOUNT_NAME=<ten_chu_tai_khoan>
 
 ## Giới hạn lịch học
 
-Backend hiện trả khung giờ lớp (`start_time`, `end_time`), chưa có thứ học hoặc ngày của từng buổi. Màn hình lịch hiển thị danh sách khung giờ lớp; lịch tuần là phần tham khảo ngày, không xác nhận lớp học diễn ra vào ngày được chọn.
+Backend hiện trả khung giờ lớp (`start_time`, `end_time`), chưa có thứ học hoặc ngày của từng buổi. Màn hình học viên hiển thị các lớp đã ghi danh và khung giờ của lớp, không suy diễn lịch từng buổi. Giảng viên quản lý lịch rảnh riêng trong tab Lịch rảnh.
+
+## Không gian theo vai trò
+
+| Vai trò backend | Giao diện và chức năng chính |
+| --- | --- |
+| SUPER ADMIN | Quản trị tài khoản, vai trò, quyền và danh mục theo quyền được cấp |
+| MANAGER | Điều hành đào tạo, quản lý/tạo lớp, duyệt hồ sơ giảng viên |
+| TEACHER | Lớp được phân công, lịch rảnh cá nhân, học viên của lớp phụ trách |
+| STUDENT | Lớp đã ghi danh, khóa học, học phí và thông tin cá nhân |
+| NORMAL USER | Khám phá khóa học, ghi danh lần đầu, đăng ký tư vấn |
+| CONSULTANT | Hộp tư vấn, thông tin liên hệ, tạo yêu cầu và cập nhật theo quyền |
+| ACCOUNTANT / KETOAN | Hóa đơn, công nợ và phiếu thu theo quyền thực tế |
+
+`ACCOUNTANT` và `KETOAN` dùng chung không gian kế toán. Ứng dụng không gộp bản ghi vai trò hoặc tự cấp thêm quyền trên backend. Các thao tác tạo/sửa/xóa cần đúng quyền API được trả về trong tài khoản; vai trò chưa được hỗ trợ có màn hình thông báo và nút đăng xuất.
+
+Sau lần ghi danh đầu tiên, ứng dụng tải lại tài khoản để chuyển từ không gian khám phá sang học viên theo vai trò backend trả về. Mỗi không gian có điều hướng riêng; phần tài khoản cá nhân và các thành phần nhận diện FPT được dùng chung.
 
 ## Kiểm tra mobile
 

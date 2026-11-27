@@ -118,7 +118,7 @@ export default function TeacherClassDetailScreen() {
                         <View className="flex-row items-center justify-between">
                             <Text className="text-xs text-gray-500">Khung giờ dạy</Text>
                             <Text className="text-sm font-semibold text-gray-800">
-                                {classroom.start_time || '08:00'} - {classroom.end_time || '10:00'}
+                                {classroom.start_time || 'Chưa xếp giờ'} - {classroom.end_time || 'Chưa xếp giờ'}
                             </Text>
                         </View>
 

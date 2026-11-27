@@ -1,343 +1,96 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-    View,
-    Text,
-    FlatList,
-    TextInput,
-    TouchableOpacity,
-    RefreshControl,
-    Linking,
-    Modal,
-    Alert,
-    ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useState } from 'react';
+import { Linking, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { callFetchLeadsForConsultants, callUpdateLead } from '@/api';
+import { requireStaffResponse } from '@/api/staff';
 import { ILead } from '@/types/backend';
-import { FptCard, FptBadge, FptLoading, FptEmptyState, FptButton, FptInput } from '@/components/common';
-
+import { useAppSelector } from '@/redux/hooks';
+import { canUse } from '@/utils/permissions';
+import { FptBadge, FptButton, FptEmptyState, FptInput, FptLoading } from '@/components/common';
 import FptErrorBanner from '@/components/common/FptErrorBanner';
+import { RoleHero, RoleScreen, RoleSection, RoleTile } from '@/components/common/RoleScreen';
 
-export default function ConsultantLeadsScreen() {
-    const [loadError, setLoadError] = useState('');
+const statuses = [['ALL', 'Tất cả trạng thái'], ['NEW', 'Mới'], ['CONTACTED', 'Đã liên hệ'], ['ENROLLED', 'Đã ghi danh'], ['CANCELLED', 'Đã hủy']];
+const ownerId = (lead: ILead) => typeof lead.consultant_id === 'string' ? lead.consultant_id : lead.consultant_id?._id;
+
+export default function ConsultantInboxScreen() {
+    const router = useRouter();
+    const user = useAppSelector(state => state.account.user);
+    const canUpdate = canUse(user.permissions, 'PATCH', '/api/v1/leads/:id');
+    const [leads, setLeads] = useState<ILead[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [leads, setLeads] = useState<ILead[]>([]);
-    const [statusFilter, setStatusFilter] = useState<'ALL' | 'NEW' | 'CONTACTED' | 'ENROLLED' | 'CANCELLED'>('ALL');
+    const [error, setError] = useState('');
     const [search, setSearch] = useState('');
-
-    // Modal state for updating lead
-    const [selectedLead, setSelectedLead] = useState<ILead | null>(null);
-    const [newStatus, setNewStatus] = useState<string>('NEW');
-    const [note, setNote] = useState<string>('');
-    const [updating, setUpdating] = useState(false);
-
-    const fetchLeads = useCallback(async () => {
-        setLoadError('');
+    const [assignment, setAssignment] = useState('MINE');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [selectedId, setSelectedId] = useState<string>();
+    const [newStatus, setNewStatus] = useState('NEW');
+    const [note, setNote] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [detailError, setDetailError] = useState('');
+    const load = useCallback(async () => {
+        setError('');
         try {
-            const res = await callFetchLeadsForConsultants();
-            if (res && res.data && Array.isArray(res.data)) {
-                setLeads(res.data);
-            }
-        } catch {
-            setLoadError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối và thử lại.');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
+            const response = await callFetchLeadsForConsultants();
+            if (!Array.isArray(response.data)) throw new Error('Invalid inbox');
+            setLeads(response.data);
+        } catch { setError('Không thể tải hộp tư vấn. Vui lòng thử lại.'); }
+        finally { setLoading(false); setRefreshing(false); }
     }, []);
-
-    useEffect(() => {
-        fetchLeads();
-    }, [fetchLeads]);
-
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchLeads();
-    };
-
-    const handleCall = (phone?: string) => {
-        if (!phone) {
-            Alert.alert('Thông báo', 'Khách hàng không để lại số điện thoại.');
-            return;
-        }
-        Linking.openURL(`tel:${phone}`);
-    };
-
-    const handleOpenUpdate = (lead: ILead) => {
-        setSelectedLead(lead);
-        setNewStatus(lead.status || 'NEW');
-        setNote(lead.note || '');
-    };
-
-    const handleSaveUpdate = async () => {
-        if (!selectedLead || !selectedLead._id) return;
-        setUpdating(true);
-        try {
-            await callUpdateLead(selectedLead._id, {
-                status: newStatus,
-                note: note.trim(),
-            });
-
-            setLeads((prev) =>
-                prev.map((item) =>
-                    item._id === selectedLead._id
-                        ? { ...item, status: newStatus, note: note.trim() }
-                        : item
-                )
-            );
-
-            setSelectedLead(null);
-            Alert.alert('Thành công', 'Đã cập nhật trạng thái tư vấn cho khách hàng.');
-        } catch (error: any) {
-            Alert.alert('Lỗi', error?.response?.data?.message || 'Không thể cập nhật.');
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    const filtered = leads.filter((item) => {
-        const matchesStatus =
-            statusFilter === 'ALL' || (item.status || '').toUpperCase() === statusFilter;
-        const q = search.toLowerCase();
-        const matchesSearch =
-            (item.full_name || item.name || '').toLowerCase().includes(q) ||
-            (item.phone || '').toLowerCase().includes(q) ||
-            (item.course_name || '').toLowerCase().includes(q);
-        return matchesStatus && matchesSearch;
+    useFocusEffect(useCallback(() => { void load(); }, [load]));
+    const filtered = leads.filter(item => {
+        const assigned = ownerId(item);
+        const matchesAssignment = assignment === 'ALL' || (assignment === 'MINE' ? assigned === user._id : !assigned);
+        return matchesAssignment && (statusFilter === 'ALL' || item.status === statusFilter) && [item.full_name, item.name, item.email, item.phone, item.course_name].some(value => value?.toLowerCase().includes(search.trim().toLowerCase()));
     });
-
-    return (
-        <SafeAreaView className="flex-1 bg-fpt-grayBg" edges={['top']}>
-            {loadError ? <FptErrorBanner message={loadError} onRetry={onRefresh} /> : null}
-            {/* Header */}
-            <View className="bg-white px-5 pt-5 pb-4 border-b border-slate-100">
-                <Text className="text-2xl font-bold text-gray-900">Khách hàng quan tâm</Text>
-                <Text className="text-xs text-gray-500 mt-0.5">
-                    Hộp thư tiếp nhận khách hàng tiềm năng (Leads CRM)
-                </Text>
-
-                {/* Search Box */}
-                <View className="mt-3 flex-row items-center rounded-xl bg-gray-100 px-3.5 py-2">
-                    <Ionicons name="search" size={18} color="#718096" />
-                    <TextInput
-                        className="ml-2.5 flex-1 text-sm text-gray-900"
-                        placeholder="Tìm theo tên, SĐT, khóa học..."
-                        placeholderTextColor="#A0AEC0"
-                        value={search}
-                        onChangeText={setSearch}
-                    />
-                    {search ? (
-                        <TouchableOpacity onPress={() => setSearch('')}>
-                            <Ionicons name="close-circle" size={18} color="#A0AEC0" />
-                        </TouchableOpacity>
-                    ) : null}
-                </View>
-
-                {/* Filter Pills */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    className="mt-3"
-                    contentContainerStyle={{ gap: 8 }}
-                >
-                    {[
-                        { key: 'ALL', label: 'Tất cả' },
-                        { key: 'NEW', label: 'Mới' },
-                        { key: 'CONTACTED', label: 'Đã liên hệ' },
-                        { key: 'ENROLLED', label: 'Đã ghi danh' },
-                        { key: 'CANCELLED', label: 'Đã hủy' },
-                    ].map((pill) => {
-                        const isSelected = statusFilter === pill.key;
-                        return (
-                            <TouchableOpacity
-                                key={pill.key}
-                                onPress={() => setStatusFilter(pill.key as any)}
-                                className={`rounded-full px-3 py-1 border ${
-                                    isSelected
-                                        ? 'bg-sky-600 border-sky-600'
-                                        : 'bg-white border-gray-200'
-                                }`}
-                            >
-                                <Text
-                                    className={`text-xs font-semibold ${
-                                        isSelected ? 'text-white' : 'text-gray-600'
-                                    }`}
-                                >
-                                    {pill.label}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
+    const selected = leads.find(lead => lead._id === selectedId);
+    const open = (lead: ILead) => { setSelectedId(lead._id); setNewStatus(lead.status || 'NEW'); setNote(lead.note || ''); setDetailError(''); };
+    const contact = async (kind: 'tel' | 'mailto', value?: string) => {
+        if (!value) return;
+        setDetailError('');
+        try { await Linking.openURL(`${kind}:${value.trim()}`); }
+        catch { setDetailError('Không thể mở ứng dụng liên hệ trên thiết bị này.'); }
+    };
+    const save = async () => {
+        if (!canUpdate || !selected?._id) return;
+        setSaving(true); setDetailError('');
+        try {
+            requireStaffResponse(await callUpdateLead(selected._id, { status: newStatus, note: note.trim() }));
+            setLeads(previous => previous.map(lead => lead._id === selected._id ? { ...lead, status: newStatus, note: note.trim() } : lead));
+            setSelectedId(undefined);
+        } catch { setDetailError('Không thể cập nhật yêu cầu. Vui lòng thử lại.'); }
+        finally { setSaving(false); }
+    };
+    return <RoleScreen eyebrow="TƯ VẤN VIÊN" title="Hộp tư vấn" subtitle="Các yêu cầu cần bạn tiếp nhận" refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }}>
+        <RoleHero eyebrow="ADMISSIONS DESK" title="Kết nối đúng nhu cầu." description="Đồng hành từ câu hỏi đầu tiên." />
+        {error ? <FptErrorBanner message={error} onRetry={() => { void load(); }} /> : null}
+        <View className="mb-4 flex-row flex-wrap gap-2">{[['MINE', 'Của tôi'], ['UNASSIGNED', 'Chưa phân công'], ['ALL', 'Tất cả']].map(([value, label]) => <TouchableOpacity key={value} accessibilityRole="button" accessibilityState={{ selected: assignment === value }} onPress={() => setAssignment(value)} className={`min-h-[44px] justify-center rounded-full px-4 ${assignment === value ? 'bg-slate-900' : 'bg-white'}`}><Text className={assignment === value ? 'text-white' : 'text-slate-600'}>{label}</Text></TouchableOpacity>)}</View>
+        <FptInput placeholder="Tìm tên, số điện thoại, email, khóa học…" value={search} onChangeText={setSearch} />
+        <View className="mb-5 flex-row flex-wrap gap-2">{statuses.map(([value, label]) => <TouchableOpacity key={value} accessibilityRole="button" accessibilityState={{ selected: statusFilter === value }} onPress={() => setStatusFilter(value)} className={`min-h-[44px] justify-center rounded-xl px-3 ${statusFilter === value ? 'bg-blue-100' : 'bg-white'}`}><Text className={statusFilter === value ? 'text-fpt-blue' : 'text-slate-500'}>{label}</Text></TouchableOpacity>)}</View>
+        <Modal visible={!!selected} transparent animationType="slide" onRequestClose={() => { if (!saving) setSelectedId(undefined); }}><View className="flex-1 justify-end bg-black/50"><View className="max-h-[90%] rounded-t-3xl bg-white p-5"><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>{selected ? <RoleSection title="Thông tin khách hàng" action={<FptButton title="Đóng" size="sm" variant="ghost" disabled={saving} onPress={() => setSelectedId(undefined)} />}>
+            <View className="rounded-2xl border border-slate-200 bg-white p-5">
+                <Text className="text-xl font-bold text-slate-900">{selected.full_name || selected.name || 'Khách hàng'}</Text>
+                <Text className="mt-2 text-sm leading-6 text-slate-500">{selected.course_name || 'Chưa cung cấp khóa học quan tâm'}</Text>
+                <Text selectable className="mt-3 text-sm text-slate-700">{selected.phone || 'Chưa có số điện thoại'}</Text>
+                <Text selectable className="mt-2 text-sm text-slate-700">{selected.email || 'Chưa có email'}</Text>
+                <Text className="mt-3 text-xs text-slate-500">{ownerId(selected) === user._id ? 'Được phân công cho bạn' : 'Chưa phân công'}</Text>
+                {selected.status ? <View className="mt-3 self-start"><FptBadge status={selected.status} /></View> : null}
+                <Text className="my-4 text-sm leading-6 text-slate-600">{selected.note || 'Chưa có ghi chú tư vấn.'}</Text>
+                <View className="mb-3 gap-2"><FptButton title="Gọi điện" variant="secondary" disabled={!selected.phone} onPress={() => { void contact('tel', selected.phone); }} /><FptButton title="Gửi email" variant="outline" disabled={!selected.email} onPress={() => { void contact('mailto', selected.email); }} /></View>
+                {canUpdate ? <View className="mt-3 border-t border-slate-100 pt-4">
+                    <Text className="mb-3 text-sm font-bold text-slate-800">Cập nhật kết quả tư vấn</Text>
+                    <View className="mb-4 flex-row flex-wrap gap-2">{statuses.filter(([value]) => value !== 'ALL').map(([value, label]) => <FptButton key={value} size="sm" title={label} variant={newStatus === value ? 'secondary' : 'ghost'} disabled={saving} onPress={() => setNewStatus(value)} />)}</View>
+                    <FptInput label="Ghi chú" multiline value={note} editable={!saving} onChangeText={setNote} />
+                    <FptButton title="Lưu cập nhật" loading={saving} onPress={() => { void save(); }} />
+                </View> : null}
+                {detailError ? <Text accessibilityRole="alert" className="mt-3 text-sm text-red-600">{detailError}</Text> : null}
             </View>
-
-            {loading && !refreshing ? (
-                <FptLoading message="Đang tải danh sách khách hàng..." />
-            ) : (
-                <FlatList
-                    data={filtered}
-                    keyExtractor={(item) => item._id || Math.random().toString()}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-                    refreshControl={
-                        <RefreshControl
-                            refreshing={refreshing}
-                            onRefresh={onRefresh}
-                            colors={['#0284C7']}
-                            tintColor="#0284C7"
-                        />
-                    }
-                    ListEmptyComponent={
-                        <FptEmptyState
-                            title="Không có khách hàng"
-                            description="Chưa có thông tin tư vấn nào trong hộp thư."
-                            icon="people-outline"
-                        />
-                    }
-                    renderItem={({ item }) => (
-                        <FptCard className="mb-4">
-                            <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
-                                <View className="flex-row items-center flex-1">
-                                    <View className="h-9 w-9 items-center justify-center rounded-full bg-sky-100 mr-2.5">
-                                        <Text className="text-sm font-bold text-sky-700">
-                                            {(item.full_name || item.name || 'KH')[0].toUpperCase()}
-                                        </Text>
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-base font-bold text-gray-900" numberOfLines={1}>
-                                            {item.full_name || item.name || 'Khách hàng'}
-                                        </Text>
-                                        <Text className="text-xs text-gray-500">
-                                            {item.email || 'Chưa để lại email'}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <FptBadge status={item.status || 'NEW'} size="sm" />
-                            </View>
-
-                            <View className="py-3 space-y-1.5">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="book-outline" size={14} color="#718096" />
-                                    <Text className="ml-1.5 text-xs text-gray-800 font-semibold">
-                                        Khóa học quan tâm:{' '}
-                                        <Text className="text-sky-700 font-bold">
-                                            {item.course_name || 'Khóa học CNTT'}
-                                        </Text>
-                                    </Text>
-                                </View>
-
-                                {item.note && (
-                                    <View className="mt-2 rounded-xl bg-fpt-grayBg p-2.5">
-                                        <Text className="text-xs text-gray-600 italic">
-                                            &quot;{item.note}&quot;
-                                        </Text>
-                                    </View>
-                                )}
-                            </View>
-
-                            <View className="mt-2 pt-3 border-t border-gray-100 flex-row items-center justify-end gap-2">
-                                <TouchableOpacity
-                                    activeOpacity={0.7}
-                                    onPress={() => handleCall(item.phone)}
-                                    className="flex-row items-center rounded-xl bg-gray-100 px-3 py-1.5"
-                                >
-                                    <Ionicons name="call-outline" size={14} color="#4A5568" />
-                                    <Text className="ml-1 text-xs font-semibold text-gray-700">
-                                        {item.phone || 'Gọi điện'}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    activeOpacity={0.7}
-                                    onPress={() => handleOpenUpdate(item)}
-                                    className="flex-row items-center rounded-xl bg-sky-50 px-3 py-1.5"
-                                >
-                                    <Ionicons name="create-outline" size={14} color="#0284C7" />
-                                    <Text className="ml-1 text-xs font-semibold text-sky-700">
-                                        Cập nhật
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </FptCard>
-                    )}
-                />
-            )}
-
-            {/* Update Lead Modal */}
-            <Modal
-                visible={!!selectedLead}
-                animationType="slide"
-                transparent
-                onRequestClose={() => setSelectedLead(null)}
-            >
-                <View className="flex-1 justify-end bg-black/50">
-                    <View className="max-h-[85%] rounded-t-3xl bg-white p-6">
-                        <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
-                            <Text className="text-lg font-bold text-gray-900">
-                                Cập nhật trạng thái khách hàng
-                            </Text>
-                            <TouchableOpacity onPress={() => setSelectedLead(null)}>
-                                <Ionicons name="close" size={22} color="#718096" />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
-                            <Text className="mb-2 text-xs font-semibold text-gray-500">
-                                Chọn trạng thái tư vấn:
-                            </Text>
-                            <View className="flex-row flex-wrap gap-2 mb-4">
-                                {[
-                                    { key: 'NEW', label: 'Mới nhận' },
-                                    { key: 'CONTACTED', label: 'Đã liên hệ tư vấn' },
-                                    { key: 'ENROLLED', label: 'Đã đăng ký ghi danh' },
-                                    { key: 'CANCELLED', label: 'Từ chối / Hủy' },
-                                ].map((s) => {
-                                    const isSel = newStatus === s.key;
-                                    return (
-                                        <TouchableOpacity
-                                            key={s.key}
-                                            onPress={() => setNewStatus(s.key)}
-                                            className={`rounded-xl px-3 py-2 border ${
-                                                isSel
-                                                    ? 'bg-sky-600 border-sky-600'
-                                                    : 'bg-white border-gray-200'
-                                            }`}
-                                        >
-                                            <Text
-                                                className={`text-xs font-semibold ${
-                                                    isSel ? 'text-white' : 'text-gray-700'
-                                                }`}
-                                            >
-                                                {s.label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-
-                            <FptInput
-                                label="Ghi chú kết quả tư vấn"
-                                placeholder="Ghi chú nhu cầu, lịch hẹn gọi lại..."
-                                value={note}
-                                onChangeText={setNote}
-                                multiline
-                                numberOfLines={3}
-                            />
-
-                            <View className="mt-4 mb-6">
-                                <FptButton
-                                    title="Lưu cập nhật"
-                                    onPress={handleSaveUpdate}
-                                    loading={updating}
-                                    variant="secondary"
-                                    size="lg"
-                                />
-                            </View>
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
-        </SafeAreaView>
-    );
+        </RoleSection> : null}</ScrollView></View></View></Modal>
+        <RoleSection title="Yêu cầu tư vấn">
+            {loading ? <FptLoading /> : filtered.map((lead, index) => <RoleTile key={lead._id || index} title={lead.full_name || lead.name || 'Khách hàng'} subtitle={[lead.course_name || 'Chưa cung cấp khóa học', ownerId(lead) ? 'Được phân công cho bạn' : 'Chưa phân công'].join(' • ')} icon="person-outline" trailing={lead.status ? <FptBadge status={lead.status} size="sm" /> : undefined} onPress={lead._id ? () => open(lead) : undefined} />)}
+            {!loading && !error && filtered.length === 0 ? <FptEmptyState title="Chưa có yêu cầu phù hợp" description="Chọn bộ lọc khác hoặc tạo yêu cầu tư vấn mới." icon="mail-outline" /> : null}
+        </RoleSection>
+        <FptButton title="Tạo yêu cầu tư vấn" onPress={() => router.push('/(consultant)/create-lead' as any)} />
+    </RoleScreen>;
 }

@@ -1,11 +1,11 @@
 import React from 'react';
 import FptTabs from '@/components/common/FptTabs';
 
-export default function PortalTabsLayout() {
+export default function ConsultantTabsLayout() {
     return <FptTabs items={[
-        { name: 'index', title: 'Tư vấn', icon: 'people-outline', activeIcon: 'people' },
+        { name: 'index', title: 'Hộp tư vấn', icon: 'mail-outline', activeIcon: 'mail' },
         { name: 'courses', title: 'Khóa học', icon: 'book-outline', activeIcon: 'book' },
-        { name: 'chat', title: 'Tin nhắn', icon: 'chatbubbles-outline', activeIcon: 'chatbubbles' },
-        { name: 'profile', title: 'Cá nhân', icon: 'person-outline', activeIcon: 'person' },
+        { name: 'chat', title: 'Trao đổi', icon: 'chatbubbles-outline', activeIcon: 'chatbubbles' },
+        { name: 'profile', title: 'Tài khoản', icon: 'person-outline', activeIcon: 'person' },
     ]} />;
 }

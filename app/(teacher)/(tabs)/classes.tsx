@@ -146,7 +146,7 @@ export default function TeacherClassesScreen() {
                                     <View className="flex-row items-center">
                                         <Ionicons name="time-outline" size={14} color="#718096" />
                                         <Text className="ml-1.5 text-xs text-gray-600">
-                                            Ca học: {item.start_time || '08:00'} - {item.end_time || '10:00'}
+                                            Ca học: {item.start_time || 'Chưa xếp giờ'} - {item.end_time || 'Chưa xếp giờ'}
                                         </Text>
                                     </View>
 
@@ -160,7 +160,7 @@ export default function TeacherClassesScreen() {
 
                                 <View className="mt-3 pt-3 border-t border-gray-100 flex-row items-center justify-between">
                                     <Text className="text-xs text-gray-500">
-                                        Sĩ số: {item.max_student || 30} học viên
+                                        Sĩ số: {item.max_student ?? 'Chưa cập nhật'} học viên
                                     </Text>
                                     <View className="flex-row items-center">
                                         <Text className="text-xs font-bold text-fpt-blue mr-1">
