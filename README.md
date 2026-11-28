@@ -9,7 +9,7 @@
 * **Expo SDK 58** & **Expo Router v4/v5** (File-based Routing phân theo vai trò `(auth)`, `(student)`, `(teacher)`, `(consultant)`, `(common)`).
 * **NativeWind v4** (Tailwind CSS cho mobile với bảng màu chuẩn nhận diện thương hiệu FPT `#F26522`, `#0050B3`).
 * **Hệ thống Quản lý Trạng thái**: Redux Toolkit (`accountSlice` đồng bộ token, role, permissions từ NestJS backend).
-* **Tương thích Backend 100% không cần sửa server**:
+* **Tích hợp Backend NestJS**:
   * Tự động bóc tách cookie và lưu trữ an toàn trong `expo-secure-store`.
   * Tự động đính kèm header `Cookie: refresh_token=...` khi gọi `/auth/refresh` và retry request với mutex chống race-condition.
 * **Các phân hệ hoàn chỉnh**:
@@ -18,6 +18,7 @@
   3. **Giảng viên (Teacher)**: Lịch dạy hàng tuần, Quản lý lớp học phụ trách, Danh sách học viên có nút gọi điện/gửi email trực tiếp.
   4. **Tư vấn viên (Consultant)**: Hộp thư tiếp nhận khách hàng (Leads CRM), lọc trạng thái tư vấn, cập nhật ghi chú và gọi điện trực tiếp.
   5. **Hệ thống chung (Common)**: Đổi mật khẩu bảo mật, Hộp thư tin nhắn và phòng chat trao đổi.
+  6. **Quản trị (Admin)**: Xem và chỉnh sửa hồ sơ người dùng, vai trò/quyền, khóa học, lớp học, khách hàng và hóa đơn; đóng/mở tài khoản và phân công giảng viên.
 
 ---
 

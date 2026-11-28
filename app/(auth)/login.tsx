@@ -72,13 +72,7 @@ export default function LoginScreen() {
                                 <Text className="mt-0.5 text-xs text-slate-500">Kết nối tri thức · Kiến tạo tương lai</Text>
                             </View>
                         </View>
-                        <View className="mb-6 rounded-3xl bg-fpt-blue p-6">
-                            <View className="mb-5 self-start rounded-full bg-white/15 px-3 py-1.5">
-                                <Text className="text-xs font-semibold text-white">KHÔNG GIAN HỌC TẬP</Text>
-                            </View>
-                            <Text className="text-3xl font-bold leading-10 text-white">Chào mừng bạn{ '\n' }trở lại!</Text>
-                            <Text className="mt-3 text-sm leading-6 text-blue-100">Lịch học, khóa học và kết nối với giảng viên — tất cả trong một ứng dụng.</Text>
-                        </View>
+                      
                         <View className="rounded-3xl border border-slate-200/70 bg-white p-5">
                             <Text className="mb-1 text-xl font-bold text-slate-900">Đăng nhập</Text>
                             <Text className="mb-6 text-sm leading-5 text-slate-500">Sử dụng tài khoản FPT Education của bạn.</Text>
