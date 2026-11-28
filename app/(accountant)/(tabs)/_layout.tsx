@@ -5,6 +5,7 @@ export default function AccountantTabs() {
         { name: 'index', title: 'Tài chính', icon: 'home-outline', activeIcon: 'home' },
         { name: 'invoices', title: 'Hóa đơn', icon: 'document-text-outline', activeIcon: 'document-text' },
         { name: 'payments', title: 'Phiếu thu', icon: 'wallet-outline', activeIcon: 'wallet' },
+        { name: 'revenue', title: 'Doanh thu', icon: 'bar-chart-outline', activeIcon: 'bar-chart' },
         { name: 'profile', title: 'Tài khoản', icon: 'person-outline', activeIcon: 'person' },
     ]} />;
 }

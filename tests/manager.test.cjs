@@ -60,3 +60,67 @@ test('failed and empty backend envelopes do not report mutation success', async 
     const missing = load({ patch: async () => ({ statusCode: 200, message: 'Missing data' }) });
     await assert.rejects(missing.reviewManagerTeacher('teacher', 'approve'), /Missing data/);
 });
+
+test('manager course and classroom updates send ids and preserve status changes', async () => {
+    const calls = [];
+    const api = load({
+        patch: async (...args) => {
+            calls.push(args);
+            return { statusCode: 200, data: { matchedCount: 1 } };
+        },
+    });
+    await api.updateManagerCourse('course-1', { status: 'INACTIVE' });
+    await api.updateManagerClassroom({
+        _id: 'class-1',
+        course_id: 'course-1',
+        teacher_id: 'teacher-1',
+        class_name: 'React 01',
+        room: 'A101',
+        max_student: '20',
+        start_time: '08:00',
+        end_time: '10:00',
+        status: 'CANCELLED',
+    });
+    assert.deepEqual(calls, [
+        ['/courses/course-1', { status: 'INACTIVE', _id: 'course-1' }],
+        ['/classrooms/class-1', {
+            _id: 'class-1',
+            course_id: 'course-1',
+            teacher_id: 'teacher-1',
+            class_name: 'React 01',
+            room: 'A101',
+            max_student: '20',
+            start_time: '08:00',
+            end_time: '10:00',
+            status: 'CANCELLED',
+        }],
+    ]);
+});
+
+test('manager user directories filter by populated role and only update matching accounts', async () => {
+    const api = load({
+        get: async () => ({
+            statusCode: 200,
+            data: {
+                meta: { pages: 1 },
+                result: [
+                    { _id: 'student', role: { name: 'STUDENT' } },
+                    { _id: 'teacher', role: { name: 'TEACHER' } },
+                ],
+            },
+        }),
+        patch: async () => ({
+            statusCode: 200,
+            data: { matchedCount: 0 },
+        }),
+    });
+    const students = await api.fetchManagerPeople('STUDENT');
+    assert.deepEqual(students.map((person) => person._id), ['student']);
+    await assert.rejects(
+        api.updateManagerPerson(
+            { _id: 'student', name: 'Student', role: { _id: 'student-role', name: 'STUDENT' } },
+            { status: 'INACTIVE' },
+        ),
+        /Không tìm thấy tài khoản/,
+    );
+});

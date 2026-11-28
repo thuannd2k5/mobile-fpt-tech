@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAppSelector } from '@/redux/hooks';
@@ -13,8 +13,10 @@ import FptErrorBanner from '@/components/common/FptErrorBanner';
 import {
     AccountantEnrollment, AccountantInvoice, accountingDate, accountingError, createAccountantInvoice,
     enrollmentLabel, fetchAccountantEnrollments, fetchAccountantInvoices,
-    invoiceAmount, invoiceEnrollment, money, refId, shortId, statusLabel, updateAccountantInvoice, uninvoicedEnrollments,
+    invoiceAmount, invoiceEnrollment, invoiceOutstanding, invoicePaid, money, refId, shortId,
+    statusLabel, updateAccountantInvoice, uninvoicedEnrollments,
 } from '@/api/accountant';
+import { printFinancialDocument } from '@/utils/financialDocuments';
 
 const statuses = ['UNPAID', 'PAID', 'CANCELLED', 'WAITING_CONFIRMATION', 'PARTIAL'];
 
@@ -62,6 +64,10 @@ export default function AccountingInvoicesScreen() {
     const eligibleEnrollments = uninvoicedEnrollments(enrollments, rows);
     const enrollmentOptions = (selected ? enrollments.filter(item => item._id === refId(selected.enrollment_id)) : eligibleEnrollments)
         .filter((item) => `${item._id} ${enrollmentLabel(item)}`.toLocaleLowerCase().includes(referenceSearch.trim().toLocaleLowerCase()));
+    const currentStatus = selected?.status?.toUpperCase() || 'UNPAID';
+    const canCancelInvoice = !!selected &&
+        !['PAID', 'PARTIAL', 'WAITING_CONFIRMATION', 'CANCELLED'].includes(currentStatus) &&
+        invoicePaid(selected) === 0;
     const close = () => { if (!saving) setVisible(false); };
     const open = (row: AccountantInvoice | null, edit = false) => {
         setSelected(row); setEditing(edit); setFormError(''); setReferenceSearch('');
@@ -72,6 +78,10 @@ export default function AccountingInvoicesScreen() {
     const save = async () => {
         const method = selected ? 'PATCH' : 'POST';
         if (!allowed(method, selected ? '/api/v1/invoices/:id' : '/api/v1/invoices')) return;
+        if (selected && status !== currentStatus && !(status === 'CANCELLED' && canCancelInvoice)) {
+            setFormError('Trạng thái đã nộp chỉ được thay đổi khi kế toán duyệt phiếu thu.');
+            return;
+        }
         if (!selected && !eligibleEnrollments.some(item => item._id === enrollmentId)) {
             setFormError('Ghi danh này đã có hóa đơn hoặc không còn hợp lệ. Vui lòng tải lại danh sách.'); return;
         }
@@ -88,6 +98,31 @@ export default function AccountingInvoicesScreen() {
         } catch (reason) { setFormError(accountingError(reason)); }
         finally { setSaving(false); }
     };
+    const printInvoice = async () => {
+        if (!selected) return;
+        const enrollment = invoiceEnrollment(selected, enrollments);
+        const student = typeof enrollment?.student_id === 'object' ? enrollment.student_id : undefined;
+        const classroom = typeof enrollment?.class_id === 'object' ? enrollment.class_id : undefined;
+        const course = typeof classroom?.course_id === 'object' ? classroom.course_id : undefined;
+        try {
+            await printFinancialDocument({
+                title: 'HÓA ĐƠN THU HỌC PHÍ',
+                documentCode: `INV-${shortId(selected._id)}`,
+                invoiceCode: `INV-${shortId(selected._id)}`,
+                studentName: student?.name || student?.email || 'Chưa cập nhật',
+                studentEmail: student?.email,
+                courseName: course?.name || 'Chưa cập nhật',
+                className: classroom?.class_name || 'Chưa cập nhật',
+                amount: Number(selected.amount || 0),
+                discountAmount: Number(selected.discount_amount || 0),
+                finalAmount: invoiceAmount(selected),
+                status: statusLabel(selected.status),
+                date: accountingDate(selected.createdAt),
+            });
+        } catch (reason) {
+            Alert.alert('Không thể in hóa đơn', accountingError(reason));
+        }
+    };
     return <>
         <RoleScreen title="Hóa đơn & công nợ" subtitle="Quản lý học phí theo từng ghi danh" eyebrow="Kế toán" refreshing={loading} onRefresh={() => void refresh()}>
             <RoleHero eyebrow="Invoice management" title="Chứng từ học phí" description="Tra cứu số tiền, ghi danh và trạng thái thanh toán." />
@@ -100,7 +135,7 @@ export default function AccountingInvoicesScreen() {
                     {['ALL', ...statuses].map((item) => <TouchableOpacity key={item} accessibilityRole="button" accessibilityState={{ selected: filter === item }} onPress={() => setFilter(item)} className={`mr-2 min-h-[44px] justify-center rounded-full border px-4 ${filter === item ? 'border-fpt-orange bg-orange-50' : 'border-slate-200 bg-white'}`}><Text className={`text-xs font-semibold ${filter === item ? 'text-fpt-orange' : 'text-slate-600'}`}>{item === 'ALL' ? 'Tất cả' : statusLabel(item)}</Text></TouchableOpacity>)}
                 </ScrollView>
                 {loading ? <ActivityIndicator color="#F26522" /> : !error && !filtered.length ? <FptEmptyState title="Chưa có hóa đơn phù hợp" description="Thử thay đổi tìm kiếm hoặc trạng thái lọc." /> : <RoleSection title={`${filtered.length} hóa đơn`}>
-                    {filtered.map((row) => <RoleTile key={row._id} title={`HĐ ${shortId(row._id)} • ${money(invoiceAmount(row))}`} subtitle={`${describe(row)}\n${accountingDate(row.createdAt)}`} onPress={() => open(row)} trailing={<FptBadge status={row.status} label={statusLabel(row.status)} size="sm" />} />)}
+                    {filtered.map((row) => <RoleTile key={row._id} title={`HĐ ${shortId(row._id)} • ${money(invoiceAmount(row))}`} subtitle={`${describe(row)}\nĐã nộp ${money(invoicePaid(row))} • Còn nợ ${money(invoiceOutstanding(row))}`} onPress={() => open(row)} trailing={<FptBadge status={row.status} label={statusLabel(row.status)} size="sm" />} />)}
                 </RoleSection>}
             </>}
         </RoleScreen>
@@ -127,12 +162,12 @@ export default function AccountingInvoicesScreen() {
                             <FptInput label="Giảm trừ (đ)" keyboardType="decimal-pad" value={discount} onChangeText={setDiscount} editable={!saving} />
                             <RoleTile title={money(Number(amount) - Number(discount))} subtitle="Thành tiền = học phí − giảm trừ" />
                             <RoleSection title="Trạng thái hóa đơn">
-                                <Text className="mb-3 text-sm leading-6 text-slate-500">Chọn “Đã hủy” để ngừng sử dụng hóa đơn và giữ lại lịch sử chứng từ.</Text>
-                                {[...new Set([...statuses, status])].map((item) => <TouchableOpacity key={item} accessibilityRole="button" accessibilityState={{ selected: item === status }} disabled={saving} onPress={() => setStatus(item)} className={`mb-2 min-h-[44px] justify-center rounded-xl border px-4 py-3 ${item === status ? 'border-fpt-orange bg-orange-50' : 'border-slate-200 bg-white'}`}><Text className="text-sm text-slate-800">{statusLabel(item)}</Text></TouchableOpacity>)}
+                                <Text className="mb-3 text-sm leading-6 text-slate-500">Trạng thái thanh toán được cập nhật tự động khi duyệt phiếu thu. Chỉ có thể hủy hóa đơn tại đây.</Text>
+                                {[...new Set([status, ...(canCancelInvoice ? ['CANCELLED'] : [])])].map((item) => <TouchableOpacity key={item} accessibilityRole="button" accessibilityState={{ selected: item === status }} disabled={saving} onPress={() => setStatus(item)} className={`mb-2 min-h-[44px] justify-center rounded-xl border px-4 py-3 ${item === status ? 'border-fpt-orange bg-orange-50' : 'border-slate-200 bg-white'}`}><Text className="text-sm text-slate-800">{statusLabel(item)}</Text></TouchableOpacity>)}
                             </RoleSection>
                             <FptButton title={selected ? 'Lưu hóa đơn' : 'Tạo hóa đơn'} loading={saving} onPress={() => void save()} />
                         </> : selected ? <>
-                            <RoleHero eyebrow="Học phí phải thu" title={money(invoiceAmount(selected))} description={statusLabel(selected.status)} />
+                            <RoleHero eyebrow="Học phí phải thu" title={money(invoiceOutstanding(selected))} description={`${statusLabel(selected.status)} • Đã nộp ${money(invoicePaid(selected))}`} />
                             <RoleSection title="Thông tin chứng từ">
                                 <RoleTile title="Học viên / Lớp" subtitle={describe(selected)} />
                                 <RoleTile title="Ghi danh" subtitle={refId(selected.enrollment_id)} />
@@ -140,7 +175,8 @@ export default function AccountingInvoicesScreen() {
                                 <RoleTile title="Giảm trừ" subtitle={money(selected.discount_amount)} />
                                 <RoleTile title="Ngày tạo" subtitle={accountingDate(selected.createdAt)} icon="calendar-outline" />
                             </RoleSection>
-                            {allowed('POST', '/api/v1/payments') && allowed('GET', '/api/v1/payments') ? <FptButton title="Lập phiếu thu cho hóa đơn" className="mb-3" onPress={() => { close(); router.push({ pathname: '/(accountant)/(tabs)/payments', params: { invoiceId: selected._id } }); }} /> : null}
+                            <FptButton title="In hóa đơn" variant="outline" className="mb-3" onPress={() => void printInvoice()} />
+                            {invoiceOutstanding(selected) > 0 && !['PAID', 'CANCELLED'].includes(selected.status?.toUpperCase() || '') && allowed('POST', '/api/v1/payments') && allowed('GET', '/api/v1/payments') && allowed('PATCH', '/api/v1/payments/:id') ? <FptButton title={selected.status?.toUpperCase() === 'WAITING_CONFIRMATION' ? 'Mở yêu cầu chờ duyệt' : 'Ghi nhận / duyệt thanh toán'} className="mb-3" onPress={() => { close(); router.push({ pathname: '/(accountant)/(tabs)/payments', params: { invoiceId: selected._id } }); }} /> : null}
                             {allowed('PATCH', '/api/v1/invoices/:id') ? <FptButton title="Chỉnh sửa hóa đơn" variant="outline" className="mb-3" onPress={() => setEditing(true)} /> : null}
                         </> : null}
                     </ScrollView>

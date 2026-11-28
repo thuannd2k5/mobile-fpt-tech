@@ -111,6 +111,11 @@ export const callFetchMyInvoices = () =>
 export const callFetchInvoiceById = (id: string) => findById<IInvoice>('invoices', id);
 export const callFetchMyPayments = () =>
     axios.get<any, IBackendRes<IPortalPayment[]>>('/payments/me');
+export const callRequestPayment = (value: {
+    invoice_id: string;
+    payment_method: 'BANK_TRANSFER' | 'CASH';
+    amount: number;
+}) => axios.post<any, IBackendRes<IPayment>>('/payments/request', value);
 
 // --- BACKOFFICE APIs ---
 // These resources mirror the modules available under `/admin` in the web portal.
