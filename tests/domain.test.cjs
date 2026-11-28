@@ -25,14 +25,18 @@ function loadTs(relativePath, overrides = {}) {
     return loaded.exports;
 }
 
-test('backend UNPAID and legacy pending invoices are payable, settled and cancelled invoices are not', () => {
-    const { isInvoicePayable } = loadTs('src/utils/invoices.ts');
-    for (const status of ['UNPAID', 'PENDING', 'WAITING_PAYMENT', ' unpaid ']) {
+test('partial invoices remain payable for their outstanding balance', () => {
+    const { isInvoicePayable, invoiceOutstandingAmount } = loadTs('src/utils/invoices.ts');
+    for (const status of ['UNPAID', 'PENDING', 'WAITING_PAYMENT', 'PARTIAL', ' unpaid ']) {
         assert.equal(isInvoicePayable(status), true, status);
     }
     for (const status of ['PAID', 'COMPLETED', 'CANCELLED', undefined, '']) {
         assert.equal(isInvoicePayable(status), false, String(status));
     }
+    assert.equal(
+        invoiceOutstandingAmount({ amount: 1000, final_amount: 900, paid_amount: 350, status: 'PARTIAL' }),
+        550,
+    );
 });
 
 test('role routing preserves all existing portal destinations', () => {

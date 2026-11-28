@@ -18,16 +18,23 @@ function load(client = {}) {
     return loaded.exports;
 }
 
-test('finance amounts retain a zero final amount and only count paid status as settled', () => {
+test('finance totals include partial payments and exclude pending approval from revenue', () => {
     const { financeSummary } = load();
     const result = financeSummary([
-        { amount: 100, final_amount: 0, status: 'PAID' },
-        { amount: 200, final_amount: 150, status: 'PAID' },
+        { amount: 100, final_amount: 100, status: 'PAID' },
+        { amount: 200, final_amount: 180, paid_amount: 50, status: 'PARTIAL' },
         { amount: 80, status: 'UNPAID' },
         { amount: 70, status: 'WAITING_CONFIRMATION' },
         { amount: 90, status: 'CANCELLED' },
     ]);
-    assert.deepEqual(result, { invoiced: 300, settled: 150, outstanding: 150, unpaidCount: 2 });
+    assert.deepEqual(result, {
+        invoiced: 430,
+        settled: 150,
+        outstanding: 280,
+        unpaidCount: 3,
+        partialCount: 1,
+        pendingCount: 1,
+    });
 });
 
 test('accounting lists follow every server page instead of truncating totals', async () => {
@@ -41,12 +48,29 @@ test('accounting lists follow every server page instead of truncating totals', a
     assert.equal(calls.length, 2);
 });
 
-test('receipt creation sends only receipt data and does not change invoice status', async () => {
+test('recording a receipt delegates settlement and amount handling to the backend', async () => {
     const calls = [];
-    const { createAccountantPayment } = load({ post: async (...args) => { calls.push(args); return { statusCode: 201, data: {} }; } });
-    const payload = { invoice_id: 'invoice-id', payment_method: 'CASH', payment_date: '2026-11-26T00:00:00.000Z' };
-    await createAccountantPayment(payload);
+    const { createAccountantReceipt } = load({
+        post: async (...args) => { calls.push(args); return { statusCode: 201, data: { _id: 'payment-id' } }; },
+    });
+    const payload = { invoice_id: 'invoice-id', amount: 2500000, payment_method: 'CASH', payment_date: '2026-11-26T00:00:00.000Z' };
+    await createAccountantReceipt(payload);
     assert.deepEqual(calls, [['/payments', payload]]);
+});
+
+test('failed receipt creation is surfaced without creating a success-shaped response', async () => {
+    const { createAccountantReceipt } = load({
+        post: async () => { throw new Error('Invoice update failed'); },
+    });
+    await assert.rejects(
+        createAccountantReceipt({
+            invoice_id: 'invoice-id',
+            amount: 1250000,
+            payment_method: 'CASH',
+            payment_date: '2026-11-26T00:00:00.000Z',
+        }),
+        /Invoice update failed/,
+    );
 });
 
 test('accounting updates include the identifier required by backend DTOs', async () => {
@@ -54,10 +78,23 @@ test('accounting updates include the identifier required by backend DTOs', async
     const { updateAccountantInvoice, updateAccountantPayment } = load({ patch: async (...args) => { calls.push(args); return { statusCode: 200, data: {} }; } });
     await updateAccountantInvoice('invoice-id', { status: 'PAID' });
     await updateAccountantPayment('payment-id', { payment_method: 'CASH' });
+    await updateAccountantPayment('payment-id', { status: 'APPROVED', approved_amount: 125 });
     assert.deepEqual(calls, [
         ['/invoices/invoice-id', { status: 'PAID', _id: 'invoice-id' }],
         ['/payments/payment-id', { payment_method: 'CASH', _id: 'payment-id' }],
+        ['/payments/payment-id', { status: 'APPROVED', approved_amount: 125, _id: 'payment-id' }],
     ]);
+});
+
+test('monthly revenue counts only approved amounts for the selected year', () => {
+    const { monthlyRevenue } = load();
+    const revenue = monthlyRevenue([
+        { amount: 200, status: 'APPROVED', payment_date: '2026-04-15T00:00:00.000Z' },
+        { amount: 500, status: 'WAITING_CONFIRMATION', payment_date: '2026-04-20T00:00:00.000Z' },
+        { approved_amount: 125, status: 'APPROVED', payment_date: '2025-04-20T00:00:00.000Z' },
+    ], 2026);
+    assert.equal(revenue[3], 200);
+    assert.equal(revenue.reduce((sum, amount) => sum + amount, 0), 200);
 });
 
 test('failed accounting envelopes never resolve as saved financial documents', async () => {
