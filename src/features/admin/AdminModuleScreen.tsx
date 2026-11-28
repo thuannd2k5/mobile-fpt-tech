@@ -26,6 +26,11 @@ import { IBackendRes, IModelPaginate } from "@/types/backend";
 import { getDefaultRouteForRole, isBackofficeRole } from "@/types/portal";
 import { canUse } from "@/utils/permissions";
 import { confirmAction } from "@/utils/confirmAction";
+import { FptSuggestionInput } from "@/components/common/FptSuggestionInput";
+import {
+  formatCoursePriceSuggestion,
+  getCourseInputSuggestions,
+} from "@/utils/courseSuggestions";
 import {
   FptButton,
   FptEmptyState,
@@ -329,6 +334,17 @@ export default function AdminModuleScreen() {
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [editorError, setEditorError] = useState("");
   const [statusError, setStatusError] = useState("");
+  const courseSuggestions = useMemo(
+    () =>
+      getCourseInputSuggestions(
+        items.map((item) => ({
+          level: item.level,
+          duration: item.duration,
+          price: item.price,
+        })),
+      ),
+    [items],
+  );
   const canRead = canUse(user.permissions, "GET", `/api/v1/${key}`);
   const canCreatePermission =
     key === "permissions" &&
@@ -766,22 +782,40 @@ export default function AdminModuleScreen() {
                   <Text className="mb-3 mt-4 text-base font-bold text-slate-900">
                     Chỉnh sửa thông tin
                   </Text>
-                  {editableFields[key as EditableModule].map((field) => (
-                    <FptInput
-                      key={field.key}
-                      label={field.label}
-                      value={draft[field.key] || ""}
-                      onChangeText={(value) =>
+                  {editableFields[key as EditableModule].map((field) => {
+                    const inputProps = {
+                      label: field.label,
+                      value: draft[field.key] || "",
+                      onChangeText: (value: string) =>
                         setDraft((current) => ({
                           ...current,
                           [field.key]: value,
-                        }))
-                      }
-                      keyboardType={field.keyboardType}
-                      multiline={field.multiline}
-                      editable={!saving}
-                    />
-                  ))}
+                        })),
+                      keyboardType: field.keyboardType,
+                      multiline: field.multiline,
+                      editable: !saving,
+                    };
+                    if (
+                      key === "courses" &&
+                      ["level", "duration", "price"].includes(field.key)
+                    ) {
+                      const suggestionKey = field.key as
+                        "level" | "duration" | "price";
+                      return (
+                        <FptSuggestionInput
+                          key={field.key}
+                          {...inputProps}
+                          suggestions={courseSuggestions[suggestionKey]}
+                          formatSuggestion={
+                            suggestionKey === "price"
+                              ? formatCoursePriceSuggestion
+                              : undefined
+                          }
+                        />
+                      );
+                    }
+                    return <FptInput key={field.key} {...inputProps} />;
+                  })}
                   {key === "classrooms" ? (
                     <>
                       <Text className="mb-2 mt-2 text-sm font-semibold text-slate-700">
