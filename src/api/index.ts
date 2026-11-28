@@ -117,6 +117,12 @@ export const callFetchMyPayments = () =>
 export const callFetchUsers = (query = '') => list<IUser>('users', query);
 export const callFetchRoles = (query = '') => list<IRole>('roles', query);
 export const callFetchPermissions = (query = '') => list<IPermission>('permissions', query);
+export const callCreatePermission = (value: {
+    name: string;
+    path: string;
+    method: string;
+    module: string;
+}) => create<IPermission>('permissions', value);
 export const callFetchEnrollments = (query = '') => list<IEnrollment>('enrollments', query);
 export const callFetchInvoices = (query = '') => list<IInvoice>('invoices', query);
 export const callFetchPayments = (query = '') => list<IPayment>('payments', query);

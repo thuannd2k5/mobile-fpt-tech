@@ -15,10 +15,8 @@ import { isBackofficeRole, getDefaultRouteForRole } from '@/types/portal';
 import {
     callFetchClassroom,
     callFetchCourse,
-    callFetchEnrollments,
     callFetchInvoices,
     callFetchLeads,
-    callFetchPayments,
     callFetchPermissions,
     callFetchRoles,
     callFetchUsers,
@@ -31,9 +29,7 @@ type AdminModule =
     | 'permissions'
     | 'courses'
     | 'classrooms'
-    | 'enrollments'
     | 'invoices'
-    | 'payments'
     | 'leads';
 
 const moduleResource: Record<AdminModule, string> = {
@@ -42,9 +38,7 @@ const moduleResource: Record<AdminModule, string> = {
     permissions: 'permissions',
     courses: 'courses',
     classrooms: 'classrooms',
-    enrollments: 'enrollments',
     invoices: 'invoices',
-    payments: 'payments',
     leads: 'leads',
 };
 
@@ -91,25 +85,11 @@ const modules: {
         background: '#ECFEFF',
     },
     {
-        key: 'enrollments',
-        label: 'Ghi danh',
-        icon: 'clipboard-outline',
-        color: '#059669',
-        background: '#ECFDF5',
-    },
-    {
         key: 'invoices',
         label: 'Hóa đơn',
         icon: 'receipt-outline',
         color: '#D97706',
         background: '#FFFBEB',
-    },
-    {
-        key: 'payments',
-        label: 'Thanh toán',
-        icon: 'card-outline',
-        color: '#16A34A',
-        background: '#F0FDF4',
     },
     {
         key: 'leads',
@@ -126,9 +106,7 @@ const requestByModule: Record<AdminModule, () => Promise<any>> = {
     permissions: () => callFetchPermissions('pageSize=1'),
     courses: () => callFetchCourse('pageSize=1'),
     classrooms: () => callFetchClassroom('pageSize=1'),
-    enrollments: () => callFetchEnrollments('pageSize=1'),
     invoices: () => callFetchInvoices('pageSize=1'),
-    payments: () => callFetchPayments('pageSize=1'),
     leads: () => callFetchLeads('pageSize=1'),
 };
 
