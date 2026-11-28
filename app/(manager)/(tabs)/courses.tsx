@@ -13,6 +13,7 @@ import { FptButton } from "@/components/common/FptButton";
 import { FptEmptyState } from "@/components/common/FptEmptyState";
 import FptErrorBanner from "@/components/common/FptErrorBanner";
 import { FptInput } from "@/components/common/FptInput";
+import { FptSuggestionInput } from "@/components/common/FptSuggestionInput";
 import { FptLoading } from "@/components/common/FptLoading";
 import {
   RoleHero,
@@ -23,6 +24,10 @@ import {
 import { useAppSelector } from "@/redux/hooks";
 import { canUse } from "@/utils/permissions";
 import { confirmAction } from "@/utils/confirmAction";
+import {
+  formatCoursePriceSuggestion,
+  getCourseInputSuggestions,
+} from "@/utils/courseSuggestions";
 
 type CourseDraft = {
   name: string;
@@ -84,6 +89,10 @@ export default function ManagerCourses() {
         .includes(search),
     );
   }, [data, query]);
+  const courseSuggestions = useMemo(
+    () => getCourseInputSuggestions(data?.result || []),
+    [data],
+  );
 
   const beginCreate = () => {
     setSelected(null);
@@ -230,28 +239,32 @@ export default function ManagerCourses() {
                 multiline
                 editable={!saving}
               />
-              <FptInput
+              <FptSuggestionInput
                 label="Trình độ"
                 value={draft.level}
                 onChangeText={(level) =>
                   setDraft((current) => ({ ...current, level }))
                 }
+                suggestions={courseSuggestions.level}
                 editable={!saving}
               />
-              <FptInput
+              <FptSuggestionInput
                 label="Thời lượng"
                 value={draft.duration}
                 onChangeText={(duration) =>
                   setDraft((current) => ({ ...current, duration }))
                 }
+                suggestions={courseSuggestions.duration}
                 editable={!saving}
               />
-              <FptInput
+              <FptSuggestionInput
                 label="Học phí"
                 value={draft.price}
                 onChangeText={(price) =>
                   setDraft((current) => ({ ...current, price }))
                 }
+                suggestions={courseSuggestions.price}
+                formatSuggestion={formatCoursePriceSuggestion}
                 keyboardType="decimal-pad"
                 editable={!saving}
               />
